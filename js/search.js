@@ -15,6 +15,7 @@ class CampusSearch {
     this.searchInput = null;
     this.resultsContainer = null;
     this.activeSuggestionIndex = -1;
+    this.debounceTimer = null;
   }
 
   init(inputId = "campusSearchInput", resultsId = "searchResultsDropdown") {
@@ -26,7 +27,7 @@ class CampusSearch {
       return;
     }
 
-    // Input event for instant dynamic search
+    // Input event for instant dynamic search with 150ms debounce
     this.searchInput.addEventListener("input", (e) => {
       this.handleInput(e.target.value.trim());
     });
@@ -58,12 +59,16 @@ class CampusSearch {
     this.activeSuggestionIndex = -1;
 
     if (!query || query.length < 1) {
+      if (this.debounceTimer) clearTimeout(this.debounceTimer);
       this.closeResults();
       return;
     }
 
-    const matches = this.queryLocations(query);
-    this.renderResults(matches, query);
+    if (this.debounceTimer) clearTimeout(this.debounceTimer);
+    this.debounceTimer = setTimeout(() => {
+      const matches = this.queryLocations(query);
+      this.renderResults(matches, query);
+    }, 150);
   }
 
   queryLocations(query) {

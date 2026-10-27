@@ -239,6 +239,9 @@ class CampusApp {
           <button type="button" class="btn-primary" onclick="window.CampusApp.routeToLocation('${loc.id}')">
             <i class="fa-solid fa-diamond-turn-right"></i> Get Directions Here
           </button>
+          <button type="button" class="btn-secondary btn-mobile-view-map" onclick="window.CampusApp.closeMobileSidebar()">
+            <i class="fa-solid fa-map-location-dot"></i> View Location on Map
+          </button>
           <button type="button" class="btn-secondary" onclick="window.CampusApp.setAsStartPoint('${loc.id}')">
             <i class="fa-solid fa-location-crosshairs"></i> Set As Start Point
           </button>
@@ -458,28 +461,72 @@ class CampusApp {
   }
 
   /**
-   * Mobile navigation drawer toggle
+   * Mobile navigation drawer toggle & keyboard support
    */
   bindMobileNav() {
     const mobileMenuBtn = document.getElementById("mobileMenuToggle");
     const sidebar = document.getElementById("mainSidebar");
     const overlay = document.getElementById("sidebarBackdrop");
+    const closeBtn = document.getElementById("sidebarCloseBtn");
 
     if (mobileMenuBtn && sidebar) {
       mobileMenuBtn.addEventListener("click", () => {
         const isOpen = sidebar.classList.toggle("mobile-open");
         mobileMenuBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
         if (overlay) overlay.classList.toggle("show", isOpen);
+        if (isOpen) {
+          // Focus close button or first tab for accessibility
+          if (closeBtn) closeBtn.focus();
+        }
+        if (this.map) this.map.invalidateMapSize();
+      });
+    }
+
+    if (closeBtn) {
+      closeBtn.addEventListener("click", () => {
+        this.closeMobileSidebar();
       });
     }
 
     if (overlay && sidebar) {
       overlay.addEventListener("click", () => {
-        sidebar.classList.remove("mobile-open");
-        overlay.classList.remove("show");
-        if (mobileMenuBtn) mobileMenuBtn.setAttribute("aria-expanded", "false");
+        this.closeMobileSidebar();
       });
     }
+
+    // Keyboard Escape closes mobile drawer
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && sidebar && sidebar.classList.contains("mobile-open")) {
+        this.closeMobileSidebar();
+      }
+    });
+
+    // Legend toggle on mobile/desktop
+    const legendBtn = document.getElementById("legendToggleBtn");
+    const legendCard = document.getElementById("mapLegendCard");
+    if (legendBtn && legendCard) {
+      legendBtn.addEventListener("click", () => {
+        const isCollapsed = legendCard.classList.toggle("is-collapsed");
+        legendBtn.setAttribute("aria-expanded", isCollapsed ? "false" : "true");
+      });
+    }
+  }
+
+  /**
+   * Closes mobile drawer and updates map layout
+   */
+  closeMobileSidebar() {
+    const sidebar = document.getElementById("mainSidebar");
+    const overlay = document.getElementById("sidebarBackdrop");
+    const mobileMenuBtn = document.getElementById("mobileMenuToggle");
+
+    if (sidebar) sidebar.classList.remove("mobile-open");
+    if (overlay) overlay.classList.remove("show");
+    if (mobileMenuBtn) {
+      mobileMenuBtn.setAttribute("aria-expanded", "false");
+      mobileMenuBtn.focus();
+    }
+    if (this.map) this.map.invalidateMapSize();
   }
 
   /**

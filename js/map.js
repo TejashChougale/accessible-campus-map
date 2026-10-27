@@ -15,10 +15,12 @@ class CampusMapController {
     this.activeFilters = new Set(Object.keys(data.categories));
     this.markers = [];
     this.buildingLayers = [];
+    this.markerLayerGroup = null;
     this.routeLayerGroup = null;
     this.activeTileLayer = null;
     this.isHighContrast = false;
     this.selectedLocation = null;
+    this.resizeObserver = null;
 
     // Callbacks to notify UI
     this.onLocationSelected = null;
@@ -56,13 +58,16 @@ class CampusMapController {
       return;
     }
 
-    // Initialize Leaflet map
+    // Initialize Leaflet map with mobile-optimized settings
     this.map = L.map(mapElementId, {
       center: this.data.campusCenter,
       zoom: this.data.defaultZoom,
       minZoom: 16,
       maxZoom: 20,
-      zoomControl: false // Custom placed zoom control for accessibility
+      zoomControl: false, // Custom placed zoom control for accessibility
+      tap: !L.Browser.mobile, // Disable Leaflet tap emulation on modern mobile to avoid click delays
+      fadeAnimation: true,
+      zoomAnimation: true
     });
 
     // Add Accessible Zoom controls at bottom-right
@@ -71,7 +76,8 @@ class CampusMapController {
     // Add Base Tile Layer (Carto Voyager - clean, high legibility, free & open)
     this.setTileLayer("voyager");
 
-    // Route Layer Group for displaying polylines
+    // Layer Groups for performance (batch addition/clearing)
+    this.markerLayerGroup = L.layerGroup().addTo(this.map);
     this.routeLayerGroup = L.layerGroup().addTo(this.map);
 
     // Draw campus boundary and building footprints
@@ -79,6 +85,21 @@ class CampusMapController {
 
     // Render markers for current floor
     this.updateMarkers();
+
+    // Resize observer to automatically invalidate size when container or sidebar changes
+    if (typeof ResizeObserver !== "undefined") {
+      this.resizeObserver = new ResizeObserver(() => {
+        this.invalidateMapSize();
+      });
+      this.resizeObserver.observe(el);
+    } else {
+      window.addEventListener("resize", () => this.invalidateMapSize(), { passive: true });
+    }
+
+    // Window orientation change on phones
+    window.addEventListener("orientationchange", () => {
+      setTimeout(() => this.invalidateMapSize(), 200);
+    }, { passive: true });
 
     // Map click resets selection if clicked on blank space
     this.map.on("click", (e) => {
@@ -92,10 +113,20 @@ class CampusMapController {
   }
 
   /**
+   * Smoothly invalidates and resizes the Leaflet map container
+   */
+  invalidateMapSize() {
+    if (!this.map) return;
+    requestAnimationFrame(() => {
+      this.map.invalidateSize({ animate: false });
+    });
+  }
+
+  /**
    * Sets the map tile layer style (standard, high contrast, or satellite-like)
    */
   setTileLayer(type = "voyager") {
-    if (this.activeTileLayer) {
+    if (this.activeTileLayer && this.map) {
       this.map.removeLayer(this.activeTileLayer);
     }
 
@@ -112,7 +143,10 @@ class CampusMapController {
     this.activeTileLayer = L.tileLayer(tileUrl, {
       attribution: attribution,
       maxZoom: 20,
-      subdomains: "abcd"
+      subdomains: "abcd",
+      keepBuffer: 3,
+      updateWhenIdle: true,
+      updateWhenZooming: false
     }).addTo(this.map);
   }
 
@@ -238,8 +272,12 @@ class CampusMapController {
   updateMarkers() {
     if (!this.map) return;
 
-    // Clear existing markers
-    this.markers.forEach(m => this.map.removeLayer(m));
+    // Clear existing markers efficiently
+    if (this.markerLayerGroup) {
+      this.markerLayerGroup.clearLayers();
+    } else {
+      this.markerLayerGroup = L.layerGroup().addTo(this.map);
+    }
     this.markers = [];
 
     // Filter locations by current floor AND active categories
@@ -255,6 +293,9 @@ class CampusMapController {
       return floorMatch && catMatch;
     });
 
+    const isSmallScreen = typeof window !== "undefined" && window.innerWidth <= 600;
+    const popupMaxWidth = isSmallScreen ? Math.min(290, window.innerWidth - 32) : 320;
+
     visibleLocations.forEach(loc => {
       const icon = this.createCustomMarkerIcon(loc);
       const marker = L.marker(loc.coords, {
@@ -264,11 +305,13 @@ class CampusMapController {
         alt: `${loc.name} - ${loc.accessibilityRating}`
       });
 
-      // Bind accessible popup
+      // Bind accessible popup with responsive constraints
       const popupHtml = this.generatePopupContent(loc);
       marker.bindPopup(popupHtml, {
-        maxWidth: 320,
-        className: "custom-accessible-popup"
+        maxWidth: popupMaxWidth,
+        minWidth: Math.min(230, popupMaxWidth),
+        className: "custom-accessible-popup",
+        autoPanPadding: [16, 16]
       });
 
       // Marker click event
@@ -276,7 +319,7 @@ class CampusMapController {
         this.selectLocation(loc);
       });
 
-      marker.addTo(this.map);
+      this.markerLayerGroup.addLayer(marker);
       this.markers.push(marker);
     });
 
@@ -366,6 +409,7 @@ class CampusMapController {
 
     this.currentFloor = floorId;
     this.updateMarkers();
+    this.invalidateMapSize();
 
     // Clear active route if it doesn't span this floor or notify
     console.log(`Floor switched to ${floorId}`);

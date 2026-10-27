@@ -280,6 +280,9 @@ class CampusRouter {
         </div>
 
         <div class="route-audio-bar">
+          <button type="button" class="btn-primary btn-mobile-view-map" onclick="window.CampusApp.closeMobileSidebar()" aria-label="View route on full map">
+            <i class="fa-solid fa-map-location-dot"></i> View Route on Map
+          </button>
           <button type="button" class="btn-audio-announce" onclick="window.CampusApp.readRouteAloud()" aria-label="Listen to step by step directions">
             <i class="fa-solid fa-volume-high"></i> Listen to Audio Guidance
           </button>

@@ -99,6 +99,16 @@
 
     <!-- Left Interactive Control Sidebar -->
     <aside class="sidebar" id="mainSidebar" role="region" aria-label="Campus Exploration & Tools">
+      <!-- Mobile Sidebar Header with Close Button -->
+      <div class="sidebar-mobile-header">
+        <span class="sidebar-mobile-title">
+          <i class="fa-solid fa-compass" aria-hidden="true"></i> Campus Navigation
+        </span>
+        <button type="button" class="btn-sidebar-close" id="sidebarCloseBtn" aria-label="Close navigation drawer">
+          <i class="fa-solid fa-xmark" aria-hidden="true"></i> <span>Close</span>
+        </button>
+      </div>
+
       <!-- Navigation Tabs -->
       <nav class="sidebar-tabs-nav" role="tablist" aria-label="Sidebar Sections">
         <button type="button" class="sidebar-nav-tab active" data-tab="explore" role="tab" aria-selected="true" id="tab-btn-explore">
@@ -311,9 +321,12 @@
       </div>
 
       <!-- Map Accessibility Legend -->
-      <div class="map-legend-card" role="region" aria-label="Map Legend">
-        <h4 class="legend-title"><i class="fa-solid fa-layer-group"></i> Legend</h4>
-        <div class="legend-items-list">
+      <div class="map-legend-card" id="mapLegendCard" role="region" aria-label="Map Legend">
+        <button type="button" class="legend-toggle-btn" id="legendToggleBtn" aria-expanded="true" aria-controls="legendItemsList">
+          <span class="legend-title"><i class="fa-solid fa-layer-group" aria-hidden="true"></i> Legend</span>
+          <i class="fa-solid fa-chevron-down legend-toggle-icon" aria-hidden="true"></i>
+        </button>
+        <div class="legend-items-list" id="legendItemsList">
           <div class="legend-item">
             <span class="legend-dot" style="background: var(--cat-ramps)"></span>
             <span>Ramps & Inclines (1:12)</span>
@@ -369,7 +382,7 @@
             </select>
           </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+          <div class="form-row-2col">
             <div class="form-group">
               <label for="reportBuildingSelect" class="form-label">Building</label>
               <select id="reportBuildingSelect" name="buildingSelect" class="select-custom">
@@ -406,7 +419,7 @@
             <textarea id="reportDescription" name="description" class="textarea-custom" rows="3" placeholder="Please describe what you observed, what makes it inaccessible, and suggestions..." required></textarea>
           </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+          <div class="form-row-2col">
             <div class="form-group">
               <label for="reportReporterName" class="form-label">Your Name (Optional)</label>
               <input type="text" id="reportReporterName" name="reporterName" class="input-custom" placeholder="e.g. ISE Student" />
@@ -447,7 +460,7 @@
 
       <form id="newCommunityPostForm">
         <div class="modal-body">
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+          <div class="form-row-2col">
             <div class="form-group">
               <label for="postAuthor" class="form-label">Your Name / Handle *</label>
               <input type="text" id="postAuthor" name="postAuthor" class="input-custom" placeholder="e.g. Sneha (1st Sem ISE)" required />

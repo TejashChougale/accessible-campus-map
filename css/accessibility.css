@@ -60,6 +60,8 @@ body.high-contrast-mode {
 
 body.high-contrast-mode .site-header,
 body.high-contrast-mode .sidebar,
+body.high-contrast-mode .sidebar-mobile-header,
+body.high-contrast-mode .map-legend-card,
 body.high-contrast-mode .modal-dialog,
 body.high-contrast-mode .active-route-card,
 body.high-contrast-mode .location-details-overlay,
@@ -68,6 +70,11 @@ body.high-contrast-mode .report-card,
 body.high-contrast-mode .dir-item-card {
   background-color: #000000 !important;
   border-color: #ffffff !important;
+  color: #ffffff !important;
+}
+
+body.high-contrast-mode .btn-sidebar-close,
+body.high-contrast-mode .legend-toggle-btn {
   color: #ffffff !important;
 }
 
