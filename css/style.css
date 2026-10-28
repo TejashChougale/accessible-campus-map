@@ -467,6 +467,74 @@ body {
   align-items: center;
 }
 
+.search-submit-btn {
+  position: absolute;
+  left: 0.4rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  cursor: pointer;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  padding: 0;
+  z-index: 2;
+}
+
+.search-submit-btn:hover {
+  color: var(--primary);
+  background: rgba(37, 99, 235, 0.1);
+}
+
+.search-submit-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+
+.search-submit-btn .search-icon {
+  position: static;
+  color: inherit;
+  font-size: 0.95rem;
+  pointer-events: auto;
+}
+
+.search-clear-btn {
+  position: absolute;
+  right: 3.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+  width: 26px;
+  height: 26px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all var(--transition-fast);
+  padding: 0;
+  z-index: 2;
+}
+
+.search-clear-btn:hover {
+  color: var(--text-main);
+  background: var(--surface-subtle);
+}
+
+.search-clear-btn:focus-visible {
+  outline: 2px solid var(--primary);
+}
+
 .search-icon {
   position: absolute;
   left: 1rem;
@@ -596,12 +664,33 @@ body {
   border-radius: 4px;
 }
 
+.result-building-badge {
+  background: rgba(37, 99, 235, 0.15);
+  color: var(--primary);
+  border: 1px solid rgba(37, 99, 235, 0.3);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
 .result-details {
   display: flex;
-  gap: 0.75rem;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.75rem;
   font-size: 0.75rem;
   color: var(--text-muted);
   margin-top: 2px;
+}
+
+.result-building-tag {
+  color: var(--primary);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.result-outdoor-tag {
+  color: #166534;
 }
 
 .status-step-free {
@@ -881,6 +970,47 @@ body {
   margin-bottom: 0.85rem;
 }
 
+.loc-building-badge {
+  background: rgba(37, 99, 235, 0.08);
+  border: 1px solid rgba(37, 99, 235, 0.28);
+  color: var(--primary);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-family: inherit;
+  line-height: normal;
+}
+
+.loc-building-badge:hover {
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+}
+
+.loc-building-badge:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+
+.loc-outdoor-badge {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+  cursor: default;
+}
+
+.loc-outdoor-badge:hover {
+  background: #f0fdf4;
+  color: #166534;
+  border-color: #bbf7d0;
+}
+
 .loc-code-badge {
   background: var(--surface-subtle);
   border: 1px solid var(--border);
@@ -953,6 +1083,54 @@ body {
 }
 .spec-pill-danger .spec-value {
   color: var(--danger);
+}
+
+.entrance-guidance-box {
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--primary);
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+.entrance-guidance-box h4 {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-main);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 0.4rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.entrance-guidance-box h4 i {
+  color: var(--primary);
+}
+
+.entrance-guidance-list {
+  list-style: none;
+  font-size: 0.8rem;
+  color: var(--text-main);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.entrance-guidance-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  line-height: 1.4;
+}
+
+.entrance-guidance-list li i {
+  color: var(--primary);
+  margin-top: 0.2rem;
+  font-size: 0.8rem;
+  flex-shrink: 0;
 }
 
 .features-list-box {
@@ -2282,8 +2460,12 @@ body {
     display: none;
   }
 
+  .search-clear-btn {
+    right: 0.75rem;
+  }
+
   .campus-search-input {
-    padding-right: 1rem;
+    padding-right: 2.2rem;
   }
 
   .modal-backdrop {

@@ -24,6 +24,7 @@ class CampusMapController {
 
     // Callbacks to notify UI
     this.onLocationSelected = null;
+    this.onBuildingSelected = null;
   }
 
   /**
@@ -177,13 +178,39 @@ class CampusMapController {
         interactive: true
       }).addTo(this.map);
 
+      bPoly.buildingId = mainBuilding.id;
+
       bPoly.bindTooltip(`<b>${mainBuilding.name}</b><br><small>Click to view building details</small>`, {
         direction: "top",
         className: "campus-tooltip"
       });
 
+      bPoly.bindPopup(`
+        <div class="popup-card">
+          <div class="popup-header">
+            <span class="popup-badge badge-step-free">
+              <i class="fa-solid fa-check"></i> Step-Free Accessible
+            </span>
+            <span class="popup-category" style="color: #2563eb">
+              <i class="fa-solid fa-building"></i> Academic Building
+            </span>
+          </div>
+          <h3 class="popup-title">${mainBuilding.name}</h3>
+          <p class="popup-meta"><strong>Building Code:</strong> ${mainBuilding.code}</p>
+          <p class="popup-notes">${mainBuilding.description}</p>
+          <div class="popup-actions" style="margin-top: 0.75rem;">
+            <button class="popup-btn btn-primary" onclick="window.CampusApp.openBuildingDetailsDrawer('${mainBuilding.id}')">
+              <i class="fa-solid fa-circle-info"></i> View Building Details
+            </button>
+          </div>
+        </div>
+      `, { maxWidth: 320, className: "campus-leaflet-popup" });
+
       bPoly.on("click", () => {
         this.focusBuilding(mainBuilding.id);
+        if (typeof this.onBuildingSelected === "function") {
+          this.onBuildingSelected(mainBuilding);
+        }
       });
 
       this.buildingLayers.push(bPoly);
@@ -333,22 +360,33 @@ class CampusMapController {
     const cat = this.data.categories[loc.category] || {};
     const isStepFree = loc.stepFree;
 
+    let buildingLabel = "";
+    if (loc.buildingId === "outdoor") {
+      buildingLabel = "Outdoor Campus Grounds";
+    } else if (this.data && Array.isArray(this.data.buildings)) {
+      const b = this.data.buildings.find(item => item.id === loc.buildingId);
+      if (b) {
+        buildingLabel = b.name;
+      }
+    }
+
     return `
       <div class="popup-card">
         <div class="popup-header">
           <span class="popup-badge ${isStepFree ? 'badge-step-free' : 'badge-alert'}">
-            <i class="fa-solid ${isStepFree ? 'fa-check' : 'fa-triangle-exclamation'}"></i>
+            <i class="fa-solid ${isStepFree ? 'fa-check' : 'fa-triangle-exclamation'}" aria-hidden="true"></i>
             ${isStepFree ? 'Step-Free Accessible' : 'Stairs Alert'}
           </span>
           <span class="popup-category" style="color: ${cat.color}">
-            <i class="fa-solid ${cat.icon}"></i> ${cat.label || ''}
+            <i class="fa-solid ${cat.icon}"></i> ${this.escapeHtml(cat.label || '')}
           </span>
         </div>
 
-        <h3 class="popup-title">${loc.name}</h3>
+        <h3 class="popup-title">${this.escapeHtml(loc.name)}</h3>
         <p class="popup-meta">
-          <strong>Room/ID:</strong> ${loc.code || 'N/A'} | 
-          <strong>Floor:</strong> ${this.getFloorName(loc.floorId)}
+          ${buildingLabel ? `<strong>Building:</strong> ${this.escapeHtml(buildingLabel)}<br>` : ''}
+          <strong>Room/ID:</strong> ${this.escapeHtml(loc.code || 'N/A')} | 
+          <strong>Floor:</strong> ${this.escapeHtml(this.getFloorName(loc.floorId))}
         </p>
 
         <div class="popup-specs">
@@ -358,7 +396,7 @@ class CampusMapController {
           ${loc.capacityKg ? `<div class="spec-item"><i class="fa-solid fa-weight-hanging"></i> Cap: ${loc.capacityKg} kg</div>` : ''}
         </div>
 
-        <p class="popup-notes">${loc.notes || ''}</p>
+        <p class="popup-notes">${this.escapeHtml(loc.notes || '')}</p>
 
         <div class="popup-actions">
           <button class="popup-btn btn-primary" onclick="window.CampusApp.routeToLocation('${loc.id}')">
@@ -383,20 +421,32 @@ class CampusMapController {
   }
 
   /**
+   * Safe HTML escaping helper
+   */
+  escapeHtml(str) {
+    if (!str) return "";
+    return String(str).replace(/[&<>'"]/g, 
+      tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+    );
+  }
+
+  /**
    * Select a location, focus on map, and notify listener
    */
-  selectLocation(loc) {
+  selectLocation(loc, notify = true) {
+    const isDifferent = !this.selectedLocation || this.selectedLocation.id !== loc.id;
     this.selectedLocation = loc;
 
     // Pan map smoothly to the location
-    if (this.map) {
+    if (this.map && loc.coords) {
       this.map.flyTo(loc.coords, 19, {
         duration: 1.0,
         easeLinearity: 0.25
       });
     }
 
-    if (typeof this.onLocationSelected === "function") {
+    // Only notify if explicit and different to prevent mutual recursion loops
+    if (notify && isDifferent && typeof this.onLocationSelected === "function") {
       this.onLocationSelected(loc);
     }
   }
@@ -440,14 +490,48 @@ class CampusMapController {
   }
 
   /**
-   * Focus building bounds
+   * Focus building bounds, highlight footprint polygon, and open info popup
    */
   focusBuilding(buildingId) {
+    if (!this.map) {
+      this.init("map");
+    }
     if (!this.map) return;
+
+    this.invalidateMapSize();
+
     const building = this.data.buildings.find(b => b.id === buildingId);
     if (building && building.polygon) {
       const bounds = L.latLngBounds(building.polygon);
       this.map.fitBounds(bounds, { padding: [50, 50], maxZoom: 19 });
+      
+      // Highlight polygon and open building popup if available
+      if (this.buildingLayers && this.buildingLayers.length > 0) {
+        const poly = this.buildingLayers.find(l => l.buildingId === buildingId) || this.buildingLayers[0];
+        if (poly) {
+          if (typeof poly.setStyle === "function") {
+            poly.setStyle({
+              color: "#1d4ed8",
+              weight: 4,
+              fillColor: "#2563eb",
+              fillOpacity: 0.28
+            });
+            setTimeout(() => {
+              if (poly && typeof poly.setStyle === "function") {
+                poly.setStyle({
+                  color: "#2563eb",
+                  weight: 2,
+                  fillColor: "#3b82f6",
+                  fillOpacity: 0.12
+                });
+              }
+            }, 3500);
+          }
+          if (typeof poly.openPopup === "function") {
+            setTimeout(() => poly.openPopup(), 250);
+          }
+        }
+      }
     }
   }
 

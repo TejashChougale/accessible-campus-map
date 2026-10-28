@@ -137,6 +137,56 @@ body.high-contrast-mode .search-result-item.active {
   border: 1px solid #ffff00 !important;
 }
 
+body.high-contrast-mode .search-submit-btn,
+body.high-contrast-mode .search-clear-btn {
+  color: #ffff00 !important;
+}
+
+body.high-contrast-mode .search-submit-btn:hover,
+body.high-contrast-mode .search-clear-btn:hover {
+  background-color: #ffff00 !important;
+  color: #000000 !important;
+}
+
+body.high-contrast-mode .loc-building-badge {
+  background: #000000 !important;
+  color: #ffff00 !important;
+  border: 1px solid #ffff00 !important;
+}
+
+body.high-contrast-mode .loc-building-badge:hover,
+body.high-contrast-mode .loc-building-badge:focus-visible {
+  background: #ffff00 !important;
+  color: #000000 !important;
+}
+
+body.high-contrast-mode .loc-outdoor-badge {
+  background: #000000 !important;
+  color: #00ff00 !important;
+  border: 1px solid #00ff00 !important;
+}
+
+body.high-contrast-mode .result-building-tag {
+  color: #ffff00 !important;
+}
+
+body.high-contrast-mode .result-outdoor-tag {
+  color: #00ff00 !important;
+}
+
+body.high-contrast-mode .entrance-guidance-box {
+  background: #000000 !important;
+  border: 1px solid #ffffff !important;
+  border-left: 3px solid #ffff00 !important;
+  color: #ffffff !important;
+}
+
+body.high-contrast-mode .entrance-guidance-box h4,
+body.high-contrast-mode .entrance-guidance-box h4 i,
+body.high-contrast-mode .entrance-guidance-list li i {
+  color: #ffff00 !important;
+}
+
 /* ==========================================================================
    Reduced Motion Preferences
    ========================================================================== */

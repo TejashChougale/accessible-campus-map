@@ -53,9 +53,12 @@ class CampusApp {
     this.community = new CampusCommunityFeed(this.data);
     this.community.renderFeed("communityFeedContainer");
 
-    // 7. Bind Location selection event from map
+    // 7. Bind Location & Building selection events from map
     this.map.onLocationSelected = (loc) => {
       this.showLocationDetails(loc.id);
+    };
+    this.map.onBuildingSelected = (building) => {
+      this.showBuildingDetails(building.id);
     };
 
     // 8. Bind UI Tabs, Modals & Accessibility toolbar
@@ -133,19 +136,209 @@ class CampusApp {
   }
 
   /**
+   * Selecting building from search dropdown
+   */
+  selectBuildingFromSearch(buildingId) {
+    this.search.closeResults();
+    this.showBuildingDetails(buildingId, false);
+    this.navigateToCampusNavigation(buildingId);
+  }
+
+  /**
+   * Show full details card for a specific building
+   */
+  showBuildingDetails(buildingId, openMobileSidebar = true) {
+    const building = this.data.buildings.find(b => b.id === buildingId);
+    if (!building) return;
+
+    if (this.activeTab !== "explore") {
+      this.switchTab("explore");
+    }
+
+    if (this.map) {
+      this.map.focusBuilding(building.id);
+    }
+
+    const detailsContainer = document.getElementById("locationDetailsCard");
+    if (!detailsContainer) return;
+
+    let entrancesHtml = "";
+    if (building.entrances && building.entrances.length) {
+      entrancesHtml = `
+        <div class="features-list-box">
+          <h4><i class="fa-solid fa-door-open"></i> Building Entrances & Accessibility</h4>
+          <ul class="features-list">
+            ${building.entrances.map(ent => `
+              <li>
+                <i class="fa-solid ${ent.accessible ? 'fa-check text-success' : 'fa-triangle-exclamation text-warning'}"></i>
+                <strong>${this.escapeHtml(ent.name)}:</strong> ${this.escapeHtml(ent.notes || '')}
+              </li>
+            `).join("")}
+          </ul>
+        </div>
+      `;
+    }
+
+    detailsContainer.innerHTML = `
+      <div class="details-card-inner">
+        <div class="details-card-header">
+          <div class="details-cat-tag" style="background-color: #2563eb18; color: #2563eb">
+            <i class="fa-solid fa-building"></i> Academic Building
+          </div>
+          <button class="btn-icon-close" onclick="window.CampusApp.closeLocationDetails()" title="Close details" aria-label="Close details">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <h3 class="details-name">${this.escapeHtml(building.name)}</h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">${this.escapeHtml(building.fullName)}</p>
+
+        <div class="details-badges-row">
+          <span class="loc-code-badge">${building.code || building.id}</span>
+          <span class="loc-floor-badge"><i class="fa-solid fa-layer-group"></i> ${building.floors.length} Floors</span>
+          <span class="loc-access-badge badge-step-free">
+            <i class="fa-solid fa-check"></i> Step-Free Entrances
+          </span>
+        </div>
+
+        <div class="details-specs-grid">
+          <div class="spec-pill">
+            <span class="spec-label"><i class="fa-solid fa-wheelchair"></i> Ramps</span>
+            <span class="spec-value">2 Step-Free Ramps</span>
+          </div>
+          <div class="spec-pill">
+            <span class="spec-label"><i class="fa-solid fa-elevator"></i> Elevators</span>
+            <span class="spec-value">2 Lifts (Braille & Audio)</span>
+          </div>
+          <div class="spec-pill">
+            <span class="spec-label"><i class="fa-solid fa-restroom"></i> Restrooms</span>
+            <span class="spec-value">Universal Restrooms</span>
+          </div>
+        </div>
+
+        ${entrancesHtml}
+
+        <div class="details-notes-box">
+          <strong><i class="fa-solid fa-circle-info"></i> About this Building:</strong>
+          <p>${this.escapeHtml(building.description)}</p>
+        </div>
+
+        <div class="details-actions-bar">
+          <button type="button" class="btn-primary" onclick="window.CampusApp.filters.selectFloor('L0')">
+            <i class="fa-solid fa-layer-group"></i> View Ground Floor
+          </button>
+          <button type="button" class="btn-secondary" onclick="window.CampusApp.filters.selectFloor('L1')">
+            <i class="fa-solid fa-layer-group"></i> View 1st Floor
+          </button>
+          <button type="button" class="btn-secondary" onclick="window.CampusApp.filters.selectFloor('L2')">
+            <i class="fa-solid fa-layer-group"></i> View 2nd Floor
+          </button>
+          <button type="button" class="btn-secondary btn-mobile-view-map" onclick="window.CampusApp.closeMobileSidebar()">
+            <i class="fa-solid fa-map-location-dot"></i> View on Map
+          </button>
+        </div>
+      </div>
+    `;
+
+    detailsContainer.classList.add("open");
+
+    // Scroll sidebar into view on mobile only if requested
+    if (openMobileSidebar && window.innerWidth < 900) {
+      const sidebar = document.getElementById("mainSidebar");
+      if (sidebar) sidebar.classList.add("mobile-open");
+    }
+  }
+
+  /**
+   * Navigate and scroll to Campus Navigation (map) section and focus building
+   */
+  navigateToCampusNavigation(buildingId) {
+    // 1. Ensure map is visible (close mobile drawer if covering map)
+    this.closeMobileSidebar();
+
+    // 2. Ensure map wrapper and container are displayed
+    const mapSection = document.getElementById("campusNavigation") || 
+                       document.querySelector(".map-container-wrapper") || 
+                       document.getElementById("map");
+    if (mapSection) {
+      if (mapSection.style.display === "none") {
+        mapSection.style.display = "";
+      }
+      const mapEl = document.getElementById("map");
+      if (mapEl && mapEl.style.display === "none") {
+        mapEl.style.display = "";
+      }
+      if (typeof mapSection.scrollIntoView === "function") {
+        mapSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+
+    // 3. Invalidate map size and focus building
+    if (this.map) {
+      this.map.invalidateMapSize();
+      if (buildingId) {
+        this.map.focusBuilding(buildingId);
+      }
+
+      // Re-invalidate and re-center after mobile drawer animation completes (250-300ms)
+      setTimeout(() => {
+        if (this.map) {
+          this.map.invalidateMapSize();
+          if (buildingId) {
+            this.map.focusBuilding(buildingId);
+          }
+        }
+      }, 300);
+    }
+
+    const building = this.data.buildings.find(b => b.id === buildingId);
+    if (building) {
+      this.showToast(`Navigated to ${building.name} on map`);
+    }
+  }
+
+  /**
+   * Open full building details drawer on mobile or sidebar
+   */
+  openBuildingDetailsDrawer(buildingId) {
+    this.showBuildingDetails(buildingId, true);
+    if (window.innerWidth < 900) {
+      const sidebar = document.getElementById("mainSidebar");
+      const overlay = document.getElementById("sidebarBackdrop");
+      const mobileMenuBtn = document.getElementById("mobileMenuToggle");
+      if (sidebar) sidebar.classList.add("mobile-open");
+      if (overlay) overlay.classList.add("show");
+      if (mobileMenuBtn) mobileMenuBtn.setAttribute("aria-expanded", "true");
+    }
+  }
+
+  /**
+   * Helper to display toast messages
+   */
+  showToast(message) {
+    if (this.reports && typeof this.reports.showToast === "function") {
+      this.reports.showToast(message);
+    }
+  }
+
+  /**
    * Show full details card / modal for a specific location
    */
   showLocationDetails(locationId) {
     const loc = this.data.locations.find(l => l.id === locationId);
     if (!loc) return;
 
+    if (this.activeTab !== "explore") {
+      this.switchTab("explore");
+    }
+
     // Switch floor on map if not matching
     if (loc.floorId !== this.map.currentFloor && loc.buildingId !== "outdoor") {
       this.filters.selectFloor(loc.floorId);
     }
 
-    // Pan map to marker
-    this.map.selectLocation(loc);
+    // Pan map to marker (pass false to prevent mutual recursion)
+    this.map.selectLocation(loc, false);
 
     // Populate and show the details panel
     const detailsContainer = document.getElementById("locationDetailsCard");
@@ -153,6 +346,51 @@ class CampusApp {
 
     const cat = this.data.categories[loc.category] || {};
     const isStepFree = loc.stepFree;
+
+    const building = (this.data && Array.isArray(this.data.buildings)) 
+      ? this.data.buildings.find(b => b.id === loc.buildingId) 
+      : null;
+
+    let buildingBadgeHtml = "";
+    if (loc.buildingId === "outdoor") {
+      buildingBadgeHtml = `
+        <span class="loc-building-badge loc-outdoor-badge">
+          <i class="fa-solid fa-tree" aria-hidden="true"></i> Outdoor Campus Grounds
+        </span>
+      `;
+    } else if (building) {
+      buildingBadgeHtml = `
+        <button type="button" class="loc-building-badge" 
+                onclick="window.CampusApp.showBuildingDetails('${building.id}')" 
+                title="View building details for ${this.escapeHtml(building.name)}" 
+                aria-label="Building: ${this.escapeHtml(building.name)}. Click to view building details">
+          <i class="fa-solid fa-building" aria-hidden="true"></i> ${this.escapeHtml(building.name)}
+        </button>
+      `;
+    }
+
+    let entranceGuidanceHtml = "";
+    if (building && Array.isArray(building.entrances)) {
+      const accessibleEntrances = building.entrances.filter(ent => ent.accessible === true);
+      if (accessibleEntrances.length > 0) {
+        entranceGuidanceHtml = `
+          <div class="entrance-guidance-box">
+            <h4><i class="fa-solid fa-door-open" aria-hidden="true"></i> Accessible Building Entrances (${this.escapeHtml(building.code || building.name)})</h4>
+            <ul class="entrance-guidance-list">
+              ${accessibleEntrances.map(ent => `
+                <li>
+                  <i class="fa-solid fa-wheelchair" aria-hidden="true"></i>
+                  <div>
+                    <strong>${this.escapeHtml(ent.name)}:</strong>
+                    <span>${this.escapeHtml(ent.notes || 'Step-free access')}</span>
+                  </div>
+                </li>
+              `).join("")}
+            </ul>
+          </div>
+        `;
+      }
+    }
 
     let featuresHtml = "";
     if (loc.features && loc.features.length) {
@@ -179,10 +417,11 @@ class CampusApp {
 
         <h3 class="details-name">${this.escapeHtml(loc.name)}</h3>
         <div class="details-badges-row">
-          <span class="loc-code-badge">${loc.code || 'ID: ' + loc.id}</span>
-          <span class="loc-floor-badge"><i class="fa-solid fa-layer-group"></i> ${this.map.getFloorName(loc.floorId)}</span>
+          ${buildingBadgeHtml}
+          <span class="loc-code-badge">${loc.code ? 'Room ' + this.escapeHtml(loc.code) : 'ID: ' + this.escapeHtml(loc.id)}</span>
+          <span class="loc-floor-badge"><i class="fa-solid fa-layer-group" aria-hidden="true"></i> ${this.escapeHtml(this.map.getFloorName(loc.floorId))}</span>
           <span class="loc-access-badge ${isStepFree ? 'badge-step-free' : 'badge-alert'}">
-            <i class="fa-solid ${isStepFree ? 'fa-check' : 'fa-triangle-exclamation'}"></i> 
+            <i class="fa-solid ${isStepFree ? 'fa-check' : 'fa-triangle-exclamation'}" aria-hidden="true"></i> 
             ${isStepFree ? 'Step-Free' : 'Contains Steps'}
           </span>
         </div>
@@ -219,6 +458,8 @@ class CampusApp {
             </div>
           ` : ''}
         </div>
+
+        ${entranceGuidanceHtml}
 
         ${featuresHtml}
 
