@@ -338,6 +338,148 @@ class CampusRouter {
 
     this.speechSynthesis.speak(utterance);
   }
+
+  /**
+   * Calculates Euclidean surface distance in meters between two lat/lng coordinates
+   * Handles invalid or non-numeric inputs safely.
+   */
+  calculateDistanceMeters(coords1, coords2) {
+    if (!Array.isArray(coords1) || coords1.length < 2 ||
+        !Array.isArray(coords2) || coords2.length < 2) {
+      return null;
+    }
+
+    const lat1 = Number(coords1[0]);
+    const lng1 = Number(coords1[1]);
+    const lat2 = Number(coords2[0]);
+    const lng2 = Number(coords2[1]);
+
+    if (isNaN(lat1) || isNaN(lng1) || isNaN(lat2) || isNaN(lng2)) {
+      return null;
+    }
+
+    const dLat = (lat2 - lat1) * 111000;
+    const avgLatRad = ((lat1 + lat2) / 2) * (Math.PI / 180);
+    const dLng = (lng2 - lng1) * 111000 * Math.cos(avgLatRad);
+
+    return Math.sqrt((dLat * dLat) + (dLng * dLng));
+  }
+
+  /**
+   * Maps floor IDs to numeric levels for vertical transfer calculations
+   */
+  getFloorLevelNumber(floorId) {
+    if (!floorId || typeof floorId !== "string") return 0;
+    const clean = floorId.trim().toUpperCase();
+    if (clean === "L0" || clean === "G" || clean === "OUTDOOR") return 0;
+    if (clean === "L1" || clean === "1F" || clean === "FLOOR 1") return 1;
+    if (clean === "L2" || clean === "2F" || clean === "FLOOR 2") return 2;
+    return 0;
+  }
+
+  /**
+   * Finds the nearest accessible amenity of a given category from origin coordinates.
+   *
+   * Applies same-floor preference: Each floor difference incurs a 250m penalty
+   * to prioritize same-floor accessible facilities without unnecessary vertical elevator transit.
+   *
+   * Robust against invalid coordinates, missing categories, and empty data.
+   */
+  findNearestAmenity(originCoords, originFloorId = "L0", categoryKey = "washrooms", options = {}) {
+    // 1. Validate origin coordinates
+    if (!Array.isArray(originCoords) || originCoords.length < 2) {
+      return null;
+    }
+    const origLat = Number(originCoords[0]);
+    const origLng = Number(originCoords[1]);
+    if (isNaN(origLat) || isNaN(origLng)) {
+      return null;
+    }
+
+    // 2. Validate category and dataset
+    if (!categoryKey || typeof categoryKey !== "string" || !this.data || !Array.isArray(this.data.locations)) {
+      return null;
+    }
+
+    const targetCategory = categoryKey.trim().toLowerCase();
+    const originLevel = this.getFloorLevelNumber(originFloorId);
+
+    // 3. Filter candidates
+    let candidates = this.data.locations.filter(loc => {
+      if (!loc || !loc.category || loc.category.toLowerCase() !== targetCategory) {
+        return false;
+      }
+      // If searching for entrance ramps, prioritize actual entrance ramps
+      if (targetCategory === "ramps" && !options.includeAllRampTypes) {
+        const isRampCode = loc.code && String(loc.code).toUpperCase().startsWith("R-");
+        const hasSlope = Boolean(loc.slopeGradient);
+        const hasRampName = loc.name && loc.name.toLowerCase().includes("ramp");
+        return isRampCode || hasSlope || hasRampName;
+      }
+      return true;
+    });
+
+    if (candidates.length === 0) {
+      return null;
+    }
+
+    let closestAmenity = null;
+    let minEffectiveDistance = Infinity;
+    let closestGroundDistance = Infinity;
+    let closestFloorDiff = 0;
+
+    for (const loc of candidates) {
+      // Validate candidate coordinates
+      const dist = this.calculateDistanceMeters(originCoords, loc.coords);
+      if (dist === null) {
+        continue; // skip corrupt coordinates safely
+      }
+
+      const targetLevel = this.getFloorLevelNumber(loc.floorId);
+      const floorDiff = Math.abs(originLevel - targetLevel);
+
+      // 250 meters penalty per floor difference to prioritize same floor
+      const effectiveDist = dist + (floorDiff * 250);
+
+      if (effectiveDist < minEffectiveDistance) {
+        minEffectiveDistance = effectiveDist;
+        closestGroundDistance = dist;
+        closestAmenity = loc;
+        closestFloorDiff = floorDiff;
+      }
+    }
+
+    if (!closestAmenity) {
+      return null;
+    }
+
+    return {
+      amenity: closestAmenity,
+      distanceMeters: Math.max(5, Math.round(closestGroundDistance)),
+      effectiveDistance: Math.round(minEffectiveDistance),
+      isSameFloor: closestFloorDiff === 0,
+      floorDiff: closestFloorDiff,
+      originFloorId: originFloorId,
+      targetFloorId: closestAmenity.floorId
+    };
+  }
+
+  /**
+   * Generates a nearby summary of essential accessible amenities (Restroom, Lift, Water, Ramp)
+   * for a specific location or reference point.
+   */
+  getNearbyAmenitiesSummary(originCoords, originFloorId = "L0") {
+    if (!Array.isArray(originCoords) || originCoords.length < 2) {
+      return null;
+    }
+
+    return {
+      washroom: this.findNearestAmenity(originCoords, originFloorId, "washrooms"),
+      lift: this.findNearestAmenity(originCoords, originFloorId, "lifts"),
+      water: this.findNearestAmenity(originCoords, originFloorId, "water"),
+      ramp: this.findNearestAmenity(originCoords, originFloorId, "ramps")
+    };
+  }
 }
 
 // Expose on global window object

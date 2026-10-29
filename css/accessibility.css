@@ -187,6 +187,93 @@ body.high-contrast-mode .entrance-guidance-list li i {
   color: #ffff00 !important;
 }
 
+body.high-contrast-mode .btn-entrance-route {
+  background-color: #000000 !important;
+  color: #ffff00 !important;
+  border: 2px solid #ffff00 !important;
+  font-weight: 800 !important;
+}
+
+body.high-contrast-mode .btn-entrance-route:hover,
+body.high-contrast-mode .btn-entrance-route:focus-visible {
+  background-color: #ffff00 !important;
+  color: #000000 !important;
+  outline: 3px solid #ffffff !important;
+}
+
+/* Day 4 Quick Assist & Nearby Amenities High Contrast Rules */
+body.high-contrast-mode .quick-assist-section {
+  background: #000000 !important;
+  border: 2px solid #ffffff !important;
+  color: #ffffff !important;
+}
+
+body.high-contrast-mode .quick-assist-title {
+  color: #ffff00 !important;
+}
+
+body.high-contrast-mode .quick-assist-subtitle {
+  color: #dddddd !important;
+}
+
+body.high-contrast-mode .btn-quick-assist {
+  background: #121212 !important;
+  border: 2px solid #ffffff !important;
+  color: #ffffff !important;
+}
+
+body.high-contrast-mode .btn-quick-assist:hover,
+body.high-contrast-mode .btn-quick-assist:focus-visible {
+  border-color: #ffff00 !important;
+  background: #222200 !important;
+  color: #ffff00 !important;
+  outline: 4px solid #ffff00 !important;
+}
+
+body.high-contrast-mode .btn-quick-assist i {
+  color: #ffff00 !important;
+}
+
+body.high-contrast-mode .nearby-amenities-card {
+  background: #000000 !important;
+  border: 2px solid #ffffff !important;
+}
+
+body.high-contrast-mode .nearby-amenities-header h4,
+body.high-contrast-mode .nearby-amenities-header small {
+  color: #ffff00 !important;
+}
+
+body.high-contrast-mode .nearby-amenity-item {
+  background: #121212 !important;
+  border: 1px solid #ffffff !important;
+  color: #ffffff !important;
+}
+
+body.high-contrast-mode .nearby-amenity-icon {
+  background: #000000 !important;
+  color: #ffff00 !important;
+}
+
+body.high-contrast-mode .badge-same-floor {
+  background: #00ff00 !important;
+  color: #000000 !important;
+  font-weight: 800 !important;
+}
+
+body.high-contrast-mode .badge-diff-floor {
+  background: #ffff00 !important;
+  color: #000000 !important;
+  font-weight: 800 !important;
+}
+
+body.high-contrast-mode .nearby-route-btn {
+  background: #ffff00 !important;
+  color: #000000 !important;
+  border: 1px solid #ffffff !important;
+  font-weight: 800 !important;
+}
+
 /* ==========================================================================
    Reduced Motion Preferences
    ========================================================================== */

@@ -67,6 +67,7 @@ class CampusApp {
     this.bindMobileNav();
     this.renderDirectoryList();
     this.bindForms();
+    this.bindQuickAssist();
 
     console.log("Accessible Campus Map initialized.");
   }
@@ -377,18 +378,117 @@ class CampusApp {
           <div class="entrance-guidance-box">
             <h4><i class="fa-solid fa-door-open" aria-hidden="true"></i> Accessible Building Entrances (${this.escapeHtml(building.code || building.name)})</h4>
             <ul class="entrance-guidance-list">
-              ${accessibleEntrances.map(ent => `
-                <li>
-                  <i class="fa-solid fa-wheelchair" aria-hidden="true"></i>
-                  <div>
-                    <strong>${this.escapeHtml(ent.name)}:</strong>
-                    <span>${this.escapeHtml(ent.notes || 'Step-free access')}</span>
+              ${accessibleEntrances.map(ent => {
+                const mappedStartId = this.getVerifiedEntranceStartPointId(ent.id);
+                const hasValidMapping = mappedStartId && this.data && Array.isArray(this.data.startingPoints) && this.data.startingPoints.some(sp => sp.id === mappedStartId);
+                const routeBtnHtml = hasValidMapping ? `
+                  <button type="button"
+                          class="btn-entrance-route"
+                          onclick="window.CampusApp.routeFromEntrance('${this.escapeHtml(ent.id)}', '${this.escapeHtml(loc.id)}')"
+                          title="Get step-free directions from ${this.escapeHtml(ent.name)} to ${this.escapeHtml(loc.name)}"
+                          aria-label="Get step-free directions from ${this.escapeHtml(ent.name)} to ${this.escapeHtml(loc.name)}">
+                    <i class="fa-solid fa-diamond-turn-right" aria-hidden="true"></i> Route from Here
+                  </button>
+                ` : "";
+
+                return `
+                <li class="entrance-guidance-item">
+                  <div class="entrance-guidance-content">
+                    <i class="fa-solid fa-wheelchair" aria-hidden="true"></i>
+                    <div class="entrance-guidance-text">
+                      <strong>${this.escapeHtml(ent.name)}:</strong>
+                      <span>${this.escapeHtml(ent.notes || 'Step-free access')}</span>
+                    </div>
                   </div>
+                  ${routeBtnHtml}
                 </li>
-              `).join("")}
+              `;
+              }).join("")}
             </ul>
           </div>
         `;
+      }
+    }
+
+    let nearbyAmenitiesHtml = "";
+    if (this.router && typeof this.router.getNearbyAmenitiesSummary === "function" && Array.isArray(loc.coords)) {
+      const nearby = this.router.getNearbyAmenitiesSummary(loc.coords, loc.floorId);
+      if (nearby) {
+        const items = [];
+        if (nearby.washroom && nearby.washroom.amenity) {
+          items.push({
+            icon: "fa-restroom",
+            color: "var(--cat-washrooms)",
+            label: "Restroom",
+            code: nearby.washroom.amenity.code || "WC",
+            name: nearby.washroom.amenity.name,
+            dist: nearby.washroom.distanceMeters,
+            isSame: nearby.washroom.isSameFloor,
+            floorName: this.map.getFloorName(nearby.washroom.amenity.floorId),
+            targetId: nearby.washroom.amenity.id
+          });
+        }
+        if (nearby.lift && nearby.lift.amenity) {
+          items.push({
+            icon: "fa-elevator",
+            color: "var(--cat-lifts)",
+            label: "Lift",
+            code: nearby.lift.amenity.code || "Lift",
+            name: nearby.lift.amenity.name,
+            dist: nearby.lift.distanceMeters,
+            isSame: nearby.lift.isSameFloor,
+            floorName: this.map.getFloorName(nearby.lift.amenity.floorId),
+            targetId: nearby.lift.amenity.id
+          });
+        }
+        if (nearby.water && nearby.water.amenity) {
+          items.push({
+            icon: "fa-faucet-drip",
+            color: "var(--cat-water)",
+            label: "Water",
+            code: nearby.water.amenity.code || "Water",
+            name: nearby.water.amenity.name,
+            dist: nearby.water.distanceMeters,
+            isSame: nearby.water.isSameFloor,
+            floorName: this.map.getFloorName(nearby.water.amenity.floorId),
+            targetId: nearby.water.amenity.id
+          });
+        }
+
+        if (items.length > 0) {
+          nearbyAmenitiesHtml = `
+            <div class="nearby-amenities-card" role="region" aria-label="Nearby Accessible Amenities">
+              <div class="nearby-amenities-header">
+                <h4><i class="fa-solid fa-person-walking-arrow-right" aria-hidden="true"></i> Nearby Accessible Amenities</h4>
+                <small class="text-muted">From this room</small>
+              </div>
+              <div class="nearby-amenities-list">
+                ${items.map(item => `
+                  <div class="nearby-amenity-item">
+                    <div class="nearby-amenity-icon" style="color: ${item.color};">
+                      <i class="fa-solid ${item.icon}" aria-hidden="true"></i>
+                    </div>
+                    <div class="nearby-amenity-info">
+                      <div class="nearby-amenity-title">
+                        <strong>${this.escapeHtml(item.label)} (${this.escapeHtml(item.code)})</strong>
+                        <span class="nearby-dist-badge ${item.isSame ? 'badge-same-floor' : 'badge-diff-floor'}">
+                          ${item.dist}m · ${item.isSame ? 'Same floor' : this.escapeHtml(item.floorName)}
+                        </span>
+                      </div>
+                      <small class="nearby-amenity-name">${this.escapeHtml(item.name)}</small>
+                    </div>
+                    <button type="button" class="btn-sm btn-primary nearby-route-btn"
+                            onclick="window.CampusApp.routeFromTo('${loc.id}', '${item.targetId}')"
+                            title="Navigate to ${this.escapeHtml(item.label)}"
+                            aria-label="Route to ${this.escapeHtml(item.label)} ${this.escapeHtml(item.code)}">
+                      <i class="fa-solid fa-diamond-turn-right" aria-hidden="true"></i> Route
+                    </button>
+                  </div>
+                `).join("")}
+              </div>
+            </div>
+          `;
+        }
       }
     }
 
@@ -461,6 +561,8 @@ class CampusApp {
 
         ${entranceGuidanceHtml}
 
+        ${nearbyAmenitiesHtml}
+
         ${featuresHtml}
 
         ${loc.notes ? `
@@ -494,6 +596,7 @@ class CampusApp {
     `;
 
     detailsContainer.classList.add("open");
+    this.updateQuickAssistReference(loc.name);
 
     // Scroll sidebar into view on mobile
     if (window.innerWidth < 900) {
@@ -506,6 +609,215 @@ class CampusApp {
     const detailsContainer = document.getElementById("locationDetailsCard");
     if (detailsContainer) {
       detailsContainer.classList.remove("open");
+    }
+    this.updateQuickAssistReference();
+  }
+
+  /**
+   * Day 4 Quick Assist: Nearest Accessible Amenity Methods
+   */
+  bindQuickAssist() {
+    const buttons = document.querySelectorAll(".btn-quick-assist");
+    buttons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        const catKey = btn.getAttribute("data-quick-cat");
+        if (catKey) {
+          this.handleQuickAssist(catKey);
+        }
+      });
+    });
+  }
+
+  updateQuickAssistReference(customText = null) {
+    const refTextEl = document.getElementById("quickAssistReferenceText");
+    if (!refTextEl) return;
+
+    if (customText) {
+      refTextEl.textContent = `From: ${customText}`;
+      return;
+    }
+
+    if (this.map && this.map.selectedLocation) {
+      const loc = this.map.selectedLocation;
+      refTextEl.textContent = `From: ${loc.name || loc.code || 'Selected Location'}`;
+    } else if (this.map) {
+      refTextEl.textContent = `From: ${this.map.getFloorName(this.map.currentFloor)}`;
+    }
+  }
+
+  handleQuickAssist(categoryKey) {
+    if (!this.router) return;
+
+    let originCoords = null;
+    let originFloorId = this.map ? this.map.currentFloor : "L0";
+    let originName = this.map ? this.map.getFloorName(originFloorId) : "Ground Floor";
+    let originLocationId = null;
+
+    if (this.map && this.map.selectedLocation && Array.isArray(this.map.selectedLocation.coords)) {
+      originCoords = this.map.selectedLocation.coords;
+      originFloorId = this.map.selectedLocation.floorId || originFloorId;
+      originName = this.map.selectedLocation.name || originName;
+      originLocationId = this.map.selectedLocation.id;
+    } else {
+      originCoords = (this.data && this.data.campusCenter) ? this.data.campusCenter : [12.93485, 77.53530];
+      if (originFloorId === "L0" && this.data && Array.isArray(this.data.startingPoints) && this.data.startingPoints[0]) {
+        originLocationId = this.data.startingPoints[0].id;
+        originName = this.data.startingPoints[0].name;
+      }
+    }
+
+    const result = this.router.findNearestAmenity(originCoords, originFloorId, categoryKey);
+
+    if (!result || !result.amenity) {
+      this.showToast(`No accessible facility found for "${categoryKey}".`);
+      return;
+    }
+
+    const targetLoc = result.amenity;
+    const isSameFloor = result.isSameFloor;
+    const floorLabel = this.map ? this.map.getFloorName(targetLoc.floorId) : targetLoc.floorId;
+
+    // Switch floor if amenity is on another floor
+    if (this.filters && this.map && this.map.currentFloor !== targetLoc.floorId) {
+      this.filters.selectFloor(targetLoc.floorId);
+    }
+
+    // Select marker on map
+    if (this.map) {
+      this.map.selectLocation(targetLoc, false);
+    }
+
+    // Update screen reader live announcer
+    const announcer = document.getElementById("a11yAnnouncer");
+    if (announcer) {
+      announcer.textContent = `Nearest accessible ${categoryKey} is ${targetLoc.name}, ${result.distanceMeters} meters away on ${floorLabel}.`;
+    }
+
+    this.showToast(`Nearest ${targetLoc.name}: ${result.distanceMeters}m away (${isSameFloor ? 'Same floor' : floorLabel})`);
+
+    // Switch to Routes tab and automatically calculate route
+    this.switchTab("routes");
+
+    const startSelect = document.getElementById("routeStartSelect");
+    const destSelect = document.getElementById("routeDestSelect");
+
+    if (destSelect) {
+      destSelect.value = targetLoc.id;
+    }
+
+    if (startSelect) {
+      if (originLocationId && Array.from(startSelect.options).some(o => o.value === originLocationId)) {
+        startSelect.value = originLocationId;
+      } else if (originFloorId === "L0" && Array.from(startSelect.options).some(o => o.value === "SP-GATE")) {
+        startSelect.value = "SP-GATE";
+      } else if (Array.from(startSelect.options).some(o => o.value === "SP-ATRIUM")) {
+        startSelect.value = "SP-ATRIUM";
+      }
+    }
+
+    this.calculateCurrentRoute();
+  }
+
+  routeFromTo(fromId, toId) {
+    this.switchTab("routes");
+    const startSelect = document.getElementById("routeStartSelect");
+    const destSelect = document.getElementById("routeDestSelect");
+    if (startSelect) startSelect.value = fromId;
+    if (destSelect) destSelect.value = toId;
+    this.calculateCurrentRoute();
+  }
+
+  /**
+   * Verified mapping of building entrances to campus route starting points.
+   * Only returns an ID if explicitly mapped and present in this.data.startingPoints.
+   */
+  getVerifiedEntranceStartPointId(entranceId) {
+    if (!entranceId || typeof entranceId !== "string") return null;
+
+    const verifiedMap = {
+      "ent-north": "SP-NORTH-RAMP",
+      "ent-east": "SP-PARK"
+    };
+
+    const startId = verifiedMap[entranceId];
+    if (startId && this.data && Array.isArray(this.data.startingPoints)) {
+      const exists = this.data.startingPoints.some(sp => sp.id === startId);
+      if (exists) return startId;
+    }
+    return null;
+  }
+
+  /**
+   * Day 4 Feature: "Route from Here" - Computes step-free route from a verified
+   * building entrance starting point directly to the destination location.
+   */
+  routeFromEntrance(entranceId, targetLocationId) {
+    const startPointId = this.getVerifiedEntranceStartPointId(entranceId);
+    if (!startPointId) {
+      console.error(`Unverified entrance ID: "${entranceId}"`);
+      if (this.reports && typeof this.reports.showToast === "function") {
+        this.reports.showToast("Selected entrance does not have an active starting point.");
+      }
+      return;
+    }
+
+    const startPoint = (this.data && Array.isArray(this.data.startingPoints))
+      ? this.data.startingPoints.find(sp => sp.id === startPointId)
+      : null;
+    const targetLoc = (this.data && Array.isArray(this.data.locations))
+      ? this.data.locations.find(l => l.id === targetLocationId)
+      : null;
+
+    if (!targetLoc) {
+      console.error(`Target location ID: "${targetLocationId}" not found.`);
+      if (this.reports && typeof this.reports.showToast === "function") {
+        this.reports.showToast("Destination room or facility not found.");
+      }
+      return;
+    }
+
+    const startName = startPoint ? startPoint.name : startPointId;
+    const destName = targetLoc.name || targetLoc.code || "destination";
+
+    // Announce calculation start without falsely claiming success before calculation finishes
+    const announcer = document.getElementById("a11yAnnouncer");
+    if (announcer) {
+      announcer.textContent = `Calculating step-free directions from ${startName} to ${destName}...`;
+    }
+
+    // Switch to Routes view
+    this.switchTab("routes");
+
+    // Ensure dropdowns are synced with selected endpoints
+    const startSelect = document.getElementById("routeStartSelect");
+    const destSelect = document.getElementById("routeDestSelect");
+
+    if (startSelect) {
+      startSelect.value = startPointId;
+    }
+    if (destSelect) {
+      destSelect.value = targetLoc.id;
+    }
+
+    // Calculate route using existing routing pipeline
+    this.calculateCurrentRoute();
+
+    // Verify actual outcome after calculation
+    if (this.router && this.router.activeRoute) {
+      const route = this.router.activeRoute;
+      if (announcer) {
+        announcer.textContent = `Route ready from ${startName} to ${destName}. Total distance ${route.totalDistanceMeters} meters, estimated travel time ${route.totalEstMinutes} minute${route.totalEstMinutes !== 1 ? 's' : ''}.`;
+      }
+      if (this.reports && typeof this.reports.showToast === "function") {
+        this.reports.showToast(`Route calculated from ${startName}`);
+      }
+    } else {
+      if (announcer) {
+        announcer.textContent = `Unable to calculate route from ${startName} to ${destName}.`;
+      }
+      if (this.reports && typeof this.reports.showToast === "function") {
+        this.reports.showToast("Unable to calculate route. Please try another starting point.");
+      }
     }
   }
 
