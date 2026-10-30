@@ -32,21 +32,70 @@ class CampusRouter {
     if (startPoint) {
       startCoords = startPoint.coords;
       startName = startPoint.name;
-      startFloor = startPoint.floorId;
+      startFloor = startPoint.floorId || "L0";
     } else {
       // Could be another location ID
       const startLoc = this.data.locations.find(l => l.id === startId);
       if (startLoc) {
         startCoords = startLoc.coords;
         startName = startLoc.name;
-        startFloor = startLoc.floorId;
+        startFloor = startLoc.floorId || "L0";
       } else {
         // Fallback default: Campus Main Gate
         startPoint = this.data.startingPoints[0];
         startCoords = startPoint.coords;
         startName = startPoint.name;
-        startFloor = startPoint.floorId;
+        startFloor = startPoint.floorId || "L0";
       }
+    }
+
+    // Validation 1: Same start and destination
+    if (startId === targetId) {
+      const sameLocationResult = {
+        isSameLocation: true,
+        startId,
+        startName: targetLoc.name,
+        targetId,
+        targetLocation: targetLoc,
+        waypoints: [targetLoc.coords],
+        steps: [
+          {
+            stepNumber: 1,
+            type: "arrive",
+            icon: "fa-location-dot",
+            instruction: `You are already at ${targetLoc.name}.`,
+            notes: "Start location and destination are the same. No transit is required.",
+            distance: 0
+          }
+        ],
+        totalDistanceMeters: 0,
+        totalEstMinutes: 0,
+        isStepFree: true,
+        hasElevator: false,
+        warningNotes: []
+      };
+      this.activeRoute = sameLocationResult;
+      return sameLocationResult;
+    }
+
+    // Validation 2: No step-free route available when user prefers step-free
+    if (preferStepFree && targetLoc.stepFree === false) {
+      const noStepFreeResult = {
+        noStepFreeRoute: true,
+        startId,
+        startName: startName || "Selected Origin",
+        targetId,
+        targetLocation: targetLoc,
+        waypoints: [],
+        steps: [],
+        totalDistanceMeters: 0,
+        totalEstMinutes: 0,
+        isStepFree: false,
+        hasElevator: false,
+        warningNotes: [`No 100% step-free route is available to ${targetLoc.name}. This destination requires navigating stairs or stepped thresholds.`]
+      };
+      this.activeRoute = noStepFreeResult;
+      return noStepFreeResult;
     }
 
     // Waypoints array for map polyline
@@ -56,7 +105,6 @@ class CampusRouter {
     // Turn-by-turn steps
     const steps = [];
     let totalDistanceMeters = 0;
-    const isTargetUpperFloor = targetLoc.floorId !== "L0";
 
     // Step 1: Start at Origin
     steps.push({
@@ -69,7 +117,7 @@ class CampusRouter {
     });
 
     // Handle outdoor approach if starting outside
-    if (startPoint && (startPoint.id === "SP-GATE" || startPoint.id === "SP-PARK")) {
+    if (startPoint && (startPoint.id === "SP-GATE" || startPoint.id === "SP-PARK" || startPoint.id === "SP-NORTH-RAMP" || startPoint.id === "SP-EAST-RAMP")) {
       if (startPoint.id === "SP-GATE") {
         const rampR1 = this.data.locations.find(l => l.code === "R-01");
         waypoints.push([12.93540, 77.53530]);
@@ -113,29 +161,34 @@ class CampusRouter {
       totalDistanceMeters += 12;
     }
 
-    // Step into Atrium Center
-    const atriumLift = this.data.locations.find(l => l.code === "L-01" && l.floorId === "L0");
-    const liftCoords = atriumLift ? atriumLift.coords : [12.93485, 77.53530];
+    // Determine vertical transit (elevator) requirement
+    const needsElevator = startFloor !== targetLoc.floorId;
 
-    // If destination is on upper floor (L1 or L2)
-    if (isTargetUpperFloor) {
+    if (needsElevator) {
+      const atriumLift = this.data.locations.find(l => l.code === "L-01" && l.floorId === startFloor) ||
+                         this.data.locations.find(l => l.code === "L-01");
+      const liftCoords = atriumLift ? atriumLift.coords : [12.93485, 77.53530];
       waypoints.push(liftCoords);
 
+      const toLiftDist = Math.max(12, Math.round(this.calculateDistanceMeters(startCoords, liftCoords) || 20));
+      const startFloorName = this.mapController ? this.mapController.getFloorName(startFloor) : startFloor;
       steps.push({
         stepNumber: steps.length + 1,
         type: "lift",
         icon: "fa-elevator",
-        instruction: `Proceed to Main Passenger Lift (L-01) in the central atrium.`,
+        instruction: `Proceed ${toLiftDist}m to Main Passenger Lift (L-01) on ${startFloorName}.`,
         notes: "Lift features Braille buttons at 95cm height and audio floor voice announcements.",
-        distance: 20
+        distance: toLiftDist
       });
-      totalDistanceMeters += 20;
+      totalDistanceMeters += toLiftDist;
 
+      const destFloorName = this.mapController ? this.mapController.getFloorName(targetLoc.floorId) : targetLoc.floorId;
+      const isUp = this.getFloorLevelNumber(targetLoc.floorId) > this.getFloorLevelNumber(startFloor);
       steps.push({
         stepNumber: steps.length + 1,
         type: "lift-transfer",
-        icon: "fa-arrow-up",
-        instruction: `Take Lift L-01 up to ${this.mapController.getFloorName(targetLoc.floorId)}.`,
+        icon: isUp ? "fa-arrow-up" : "fa-arrow-down",
+        instruction: `Take Lift L-01 ${isUp ? 'up' : 'down'} to ${destFloorName}.`,
         notes: "Elevator cabin has rear mirror and safety light curtain to keep doors held open safely.",
         distance: 0
       });
@@ -144,30 +197,31 @@ class CampusRouter {
       waypoints.push([liftCoords[0], liftCoords[1] + 0.0001]);
       waypoints.push(targetLoc.coords);
 
-      const corridorDist = Math.round(Math.abs(targetLoc.coords[0] - liftCoords[0]) * 111000 + Math.abs(targetLoc.coords[1] - liftCoords[1]) * 111000);
+      const corridorDist = Math.round(this.calculateDistanceMeters(liftCoords, targetLoc.coords) || 18);
       const estCorridorM = Math.max(corridorDist, 18);
 
       steps.push({
         stepNumber: steps.length + 1,
         type: "corridor",
         icon: "fa-signs-post",
-        instruction: `Exit lift, turn towards corridor and proceed ${estCorridorM}m down the 180cm wide hallway.`,
+        instruction: `Exit lift on ${destFloorName}, turn towards corridor and proceed ${estCorridorM}m down the 180cm wide hallway.`,
         notes: `Look for high-contrast door signage with raised tactile numerals for Room ${targetLoc.code || targetLoc.name}.`,
         distance: estCorridorM
       });
       totalDistanceMeters += estCorridorM;
 
     } else {
-      // Destination is on Ground Floor
+      // Both origin and destination are on the same floor!
       waypoints.push(targetLoc.coords);
-      const walkDist = Math.round(Math.abs(targetLoc.coords[0] - startCoords[0]) * 111000 + Math.abs(targetLoc.coords[1] - startCoords[1]) * 111000);
-      const estWalkM = Math.max(walkDist, 22);
+      const walkDist = Math.round(this.calculateDistanceMeters(startCoords, targetLoc.coords) || 22);
+      const estWalkM = Math.max(walkDist, 15);
+      const currentFloorName = this.mapController ? this.mapController.getFloorName(startFloor) : "Ground Floor (L0)";
 
       steps.push({
         stepNumber: steps.length + 1,
         type: "corridor",
         icon: "fa-person-walking",
-        instruction: `Proceed along the ground floor corridor for ${estWalkM}m towards ${targetLoc.name}.`,
+        instruction: `Proceed along the ${currentFloorName} corridor for ${estWalkM}m towards ${targetLoc.name}.`,
         notes: "Level non-slip flooring with continuous unobstructed clearance.",
         distance: estWalkM
       });
@@ -188,7 +242,7 @@ class CampusRouter {
     // Wheelchair / steady walking speed ~ 0.8 meters/second = ~48 meters/min
     // Plus 45 seconds for elevator wait/ride
     const walkMinutes = totalDistanceMeters / 48;
-    const liftMinutes = isTargetUpperFloor ? 0.75 : 0;
+    const liftMinutes = needsElevator ? 0.75 : 0;
     const totalEstMinutes = Math.max(1, Math.ceil(walkMinutes + liftMinutes));
 
     const routeResult = {
@@ -201,12 +255,33 @@ class CampusRouter {
       totalDistanceMeters,
       totalEstMinutes,
       isStepFree: preferStepFree && targetLoc.stepFree,
-      hasElevator: isTargetUpperFloor,
+      hasElevator: needsElevator,
       warningNotes: preferStepFree ? [] : ["This route may contain stairs. Use caution."]
     };
 
     this.activeRoute = routeResult;
     return routeResult;
+  }
+
+  /**
+   * Clears active route and resets display and map polyline
+   */
+  clearRoute(containerId = "routeResultsPanel") {
+    this.activeRoute = null;
+    const container = document.getElementById(containerId);
+    if (container) {
+      container.innerHTML = "";
+    }
+    if (this.mapController) {
+      this.mapController.clearRoute();
+    }
+  }
+
+  escapeHtml(str) {
+    if (!str) return "";
+    return String(str).replace(/[&<>'"]/g,
+      tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+    );
   }
 
   /**
@@ -218,6 +293,68 @@ class CampusRouter {
 
     if (!route) {
       container.innerHTML = "";
+      return;
+    }
+
+    if (route.isSameLocation) {
+      container.innerHTML = `
+        <div class="active-route-card route-feedback-card info-card" role="region" aria-label="Route Information">
+          <div class="route-card-header">
+            <div class="route-status-pill status-info">
+              <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+              Same Location
+            </div>
+            <button class="btn-icon-close" onclick="window.CampusApp.clearCurrentRoute()" title="Clear route" aria-label="Clear route">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+          <h3 class="route-destination-title">${this.escapeHtml(route.targetLocation.name)}</h3>
+          <p class="route-feedback-message">
+            Your selected start point and destination are the same location (<strong>${this.escapeHtml(route.targetLocation.name)}</strong>). You are already at this destination.
+          </p>
+          <div class="route-audio-bar">
+            <button type="button" class="btn-secondary" onclick="window.CampusApp.clearCurrentRoute()" aria-label="Reset Route">
+              <i class="fa-solid fa-arrow-rotate-left"></i> Reset Route
+            </button>
+          </div>
+        </div>
+      `;
+      if (this.mapController) {
+        this.mapController.clearRoute();
+      }
+      return;
+    }
+
+    if (route.noStepFreeRoute) {
+      container.innerHTML = `
+        <div class="active-route-card route-feedback-card warning-card" role="region" aria-label="Route Warning">
+          <div class="route-card-header">
+            <div class="route-status-pill status-warning">
+              <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+              No Step-Free Route
+            </div>
+            <button class="btn-icon-close" onclick="window.CampusApp.clearCurrentRoute()" title="Clear route" aria-label="Clear route">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+          <h3 class="route-destination-title">No Step-Free Route to ${this.escapeHtml(route.targetLocation.name)}</h3>
+          <p class="route-feedback-message">
+            ${this.escapeHtml(route.warningNotes[0] || 'No 100% step-free route is available to this destination because it has stepped access.')}
+          </p>
+          <div class="route-feedback-hint">
+            <i class="fa-solid fa-lightbulb" aria-hidden="true"></i>
+            <span>Tip: Uncheck <strong>"Step-free accessible route only"</strong> to view standard walking directions with stairs.</span>
+          </div>
+          <div class="route-audio-bar">
+            <button type="button" class="btn-secondary" onclick="window.CampusApp.clearCurrentRoute()" aria-label="Reset Route">
+              <i class="fa-solid fa-arrow-rotate-left"></i> Reset Route
+            </button>
+          </div>
+        </div>
+      `;
+      if (this.mapController) {
+        this.mapController.clearRoute();
+      }
       return;
     }
 

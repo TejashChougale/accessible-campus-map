@@ -28,9 +28,9 @@ const CAMPUS_DATA = {
       code: "MAB",
       description: "Primary 3-floor academic building housing Information Science & Engineering, Computer Labs, Lecture Theatres, Dean's Office, and Student Services.",
       floors: [
-        { id: "L0", name: "Ground Floor", shortName: "G", level: 0, heightNote: "Street & Courtyard level access" },
-        { id: "L1", name: "1st Floor", shortName: "1F", level: 1, heightNote: "Accessible via Lifts L-01 & L-02" },
-        { id: "L2", name: "2nd Floor", shortName: "2F", level: 2, heightNote: "Accessible via Lifts L-01 & L-02" }
+        { id: "L0", name: "Ground Floor (L0)", shortName: "G", level: 0, heightNote: "Street & Courtyard level access" },
+        { id: "L1", name: "First Floor (L1)", shortName: "1F", level: 1, heightNote: "Accessible via Lifts L-01 & L-02" },
+        { id: "L2", name: "Second Floor (L2)", shortName: "2F", level: 2, heightNote: "Accessible via Lifts L-01 & L-02" }
       ],
       // Building geographical footprint
       polygon: [
@@ -889,7 +889,7 @@ const CAMPUS_DATA = {
       id: "REP-01",
       issueType: "Minor Obstacle",
       building: "Main Academic Block (MAB)",
-      floor: "Ground Floor",
+      floor: "Ground Floor (L0)",
       locationName: "Corridor near Lab 102",
       description: "A temporary display board was partially obstructing the 120cm clear corridor path.",
       severity: "Low",
@@ -901,7 +901,7 @@ const CAMPUS_DATA = {
       id: "REP-02",
       issueType: "Lighting / Visibility",
       building: "Main Academic Block (MAB)",
-      floor: "Floor 1",
+      floor: "First Floor (L1)",
       locationName: "East Ramp landing junction",
       description: "One overhead LED tube light was flickering near the ramp sign.",
       severity: "Medium",

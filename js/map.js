@@ -17,6 +17,7 @@ class CampusMapController {
     this.buildingLayers = [];
     this.markerLayerGroup = null;
     this.routeLayerGroup = null;
+    this.walkwayLayerGroup = null;
     this.activeTileLayer = null;
     this.isHighContrast = false;
     this.selectedLocation = null;
@@ -80,6 +81,7 @@ class CampusMapController {
     // Layer Groups for performance (batch addition/clearing)
     this.markerLayerGroup = L.layerGroup().addTo(this.map);
     this.routeLayerGroup = L.layerGroup().addTo(this.map);
+    this.walkwayLayerGroup = L.layerGroup().addTo(this.map);
 
     // Draw campus boundary and building footprints
     this.renderBuildingFootprints();
@@ -224,33 +226,31 @@ class CampusMapController {
    * Renders simulated accessible pathways on the campus surface
    */
   renderCampusWalkways() {
+    if (!this.map || !this.walkwayLayerGroup) return;
+    this.walkwayLayerGroup.clearLayers();
+
+    // Dedicated entrance approach walkways (no artificial Gate-to-Park connector)
     const accessibleWalkways = [
-      // From Campus Gate to Main Entrance Ramp
+      // From Campus Gate to North Main Entrance Ramp (R-01)
       [
         [12.93560, 77.53530],
         [12.93527, 77.53530]
       ],
-      // From Parking Bay to East Ramp
+      // From Accessible Parking Bay to East Wing Ramp (R-02)
       [
         [12.93480, 77.53630],
-        [12.93480, 77.53587]
-      ],
-      // North to East Perimeter accessible connector
-      [
-        [12.93527, 77.53530],
-        [12.93527, 77.53587],
         [12.93480, 77.53587]
       ]
     ];
 
     accessibleWalkways.forEach(path => {
       L.polyline(path, {
-        color: "#10b981",
-        weight: 4,
-        dashArray: "6, 8",
-        opacity: 0.7,
+        color: "#059669",
+        weight: 3.5,
+        dashArray: "4, 6",
+        opacity: 0.65,
         lineCap: "round"
-      }).addTo(this.map).bindTooltip("Step-Free Tactile Paved Walkway", {
+      }).addTo(this.walkwayLayerGroup).bindTooltip("Tactile Step-Free Paved Walkway", {
         direction: "center",
         className: "campus-tooltip"
       });
@@ -370,6 +370,16 @@ class CampusMapController {
       }
     }
 
+    let emergencyNoticeHtml = "";
+    if (loc.category === "emergency") {
+      emergencyNoticeHtml = `
+        <div class="popup-alert-box alert-emergency" role="note">
+          <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+          <span><strong>Notice:</strong> Emergency exit information is provided for general awareness only. Do not rely on this map for emergency evacuation. Follow official campus instructions.</span>
+        </div>
+      `;
+    }
+
     return `
       <div class="popup-card">
         <div class="popup-header">
@@ -388,6 +398,8 @@ class CampusMapController {
           <strong>Room/ID:</strong> ${this.escapeHtml(loc.code || 'N/A')} | 
           <strong>Floor:</strong> ${this.escapeHtml(this.getFloorName(loc.floorId))}
         </p>
+
+        ${emergencyNoticeHtml}
 
         <div class="popup-specs">
           ${loc.doorWidthCm ? `<div class="spec-item"><i class="fa-solid fa-door-open"></i> Door: ${loc.doorWidthCm} cm</div>` : ''}
@@ -414,9 +426,9 @@ class CampusMapController {
    * Helper to get floor human readable name
    */
   getFloorName(floorId) {
-    if (floorId === "L0") return "Ground Floor (Level 0)";
-    if (floorId === "L1") return "1st Floor (Level 1)";
-    if (floorId === "L2") return "2nd Floor (Level 2)";
+    if (floorId === "L0") return "Ground Floor (L0)";
+    if (floorId === "L1") return "First Floor (L1)";
+    if (floorId === "L2") return "Second Floor (L2)";
     return floorId;
   }
 
@@ -459,9 +471,21 @@ class CampusMapController {
 
     this.currentFloor = floorId;
     this.updateMarkers();
-    this.invalidateMapSize();
 
-    // Clear active route if it doesn't span this floor or notify
+    // Outdoor walkways belong only on Ground Floor (L0)
+    if (this.walkwayLayerGroup && this.map) {
+      if (floorId === "L0") {
+        if (!this.map.hasLayer(this.walkwayLayerGroup)) {
+          this.map.addLayer(this.walkwayLayerGroup);
+        }
+      } else {
+        if (this.map.hasLayer(this.walkwayLayerGroup)) {
+          this.map.removeLayer(this.walkwayLayerGroup);
+        }
+      }
+    }
+
+    this.invalidateMapSize();
     console.log(`Floor switched to ${floorId}`);
   }
 

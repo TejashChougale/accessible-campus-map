@@ -62,31 +62,31 @@
     <div class="header-controls">
       <!-- Floor Switcher Group -->
       <nav class="floor-switcher-container" id="floorSwitcherGroup" aria-label="Select Campus Building Floor">
-        <button type="button" class="floor-btn active" data-floor="L0" aria-selected="true">
-          <i class="fa-solid fa-layer-group"></i> 
-          <span class="floor-name-full">Ground Floor</span>
+        <button type="button" class="floor-btn active" data-floor="L0" aria-selected="true" title="Switch to Ground Floor (L0)">
+          <i class="fa-solid fa-layer-group" aria-hidden="true"></i>
+          <span class="floor-name-full">Ground Floor (L0)</span>
           <span class="floor-name-short">G</span>
         </button>
-        <button type="button" class="floor-btn" data-floor="L1" aria-selected="false">
-          <span class="floor-name-full">Floor 1</span>
+        <button type="button" class="floor-btn" data-floor="L1" aria-selected="false" title="Switch to First Floor (L1)">
+          <span class="floor-name-full">First Floor (L1)</span>
           <span class="floor-name-short">1F</span>
         </button>
-        <button type="button" class="floor-btn" data-floor="L2" aria-selected="false">
-          <span class="floor-name-full">Floor 2</span>
+        <button type="button" class="floor-btn" data-floor="L2" aria-selected="false" title="Switch to Second Floor (L2)">
+          <span class="floor-name-full">Second Floor (L2)</span>
           <span class="floor-name-short">2F</span>
         </button>
       </nav>
 
       <!-- Accessibility Toolbar Options -->
       <div class="a11y-toolbar" role="toolbar" aria-label="Visual Accessibility Options">
-        <button type="button" class="btn-toolbar" id="btnToggleContrast" aria-pressed="false" title="Toggle High Contrast Mode">
-          <i class="fa-solid fa-circle-half-stroke"></i>
-          <span class="btn-label">Contrast</span>
+        <button type="button" class="btn-toolbar" id="btnToggleContrast" aria-pressed="false" title="Toggle High Contrast Mode" aria-label="High Contrast: Off">
+          <i class="fa-solid fa-circle-half-stroke" aria-hidden="true"></i>
+          <span class="btn-label" id="contrastBtnLabel">High Contrast: Off</span>
         </button>
 
         <button type="button" class="btn-toolbar" id="btnCycleFontSize" aria-label="Adjust font size" title="Cycle font size (Normal / Large / Extra Large)">
-          <i class="fa-solid fa-font"></i>
-          <span class="btn-label">Text: Normal</span>
+          <i class="fa-solid fa-font" aria-hidden="true"></i>
+          <span class="btn-label" id="fontSizeBtnLabel">Text: Normal</span>
         </button>
       </div>
     </div>
@@ -98,33 +98,33 @@
     <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
     <!-- Left Interactive Control Sidebar -->
-    <aside class="sidebar" id="mainSidebar" role="region" aria-label="Campus Exploration & Tools">
+    <aside class="sidebar" id="mainSidebar" role="region" aria-label="Campus Exploration & Tools" tabindex="-1">
       <!-- Mobile Sidebar Header with Close Button -->
       <div class="sidebar-mobile-header">
         <span class="sidebar-mobile-title">
           <i class="fa-solid fa-compass" aria-hidden="true"></i> Campus Navigation
         </span>
-        <button type="button" class="btn-sidebar-close" id="sidebarCloseBtn" aria-label="Close navigation drawer">
-          <i class="fa-solid fa-xmark" aria-hidden="true"></i> <span>Close</span>
+        <button type="button" class="btn-sidebar-close" id="sidebarCloseBtn" aria-label="Close Navigation Panel" title="Close Navigation Panel">
+          <i class="fa-solid fa-xmark" aria-hidden="true"></i> <span>Close Navigation Panel</span>
         </button>
       </div>
 
       <!-- Navigation Tabs -->
       <nav class="sidebar-tabs-nav" role="tablist" aria-label="Sidebar Sections">
-        <button type="button" class="sidebar-nav-tab active" data-tab="explore" role="tab" aria-selected="true" id="tab-btn-explore">
-          <i class="fa-solid fa-compass"></i> Explore
+        <button type="button" class="sidebar-nav-tab active" data-tab="explore" role="tab" aria-selected="true" aria-controls="tab-explore" id="tab-btn-explore" tabindex="0">
+          <i class="fa-solid fa-compass" aria-hidden="true"></i> Explore
         </button>
-        <button type="button" class="sidebar-nav-tab" data-tab="routes" role="tab" aria-selected="false" id="tab-btn-routes">
-          <i class="fa-solid fa-diamond-turn-right"></i> Directions
+        <button type="button" class="sidebar-nav-tab" data-tab="routes" role="tab" aria-selected="false" aria-controls="tab-routes" id="tab-btn-routes" tabindex="-1">
+          <i class="fa-solid fa-diamond-turn-right" aria-hidden="true"></i> Directions
         </button>
-        <button type="button" class="sidebar-nav-tab" data-tab="directory" role="tab" aria-selected="false" id="tab-btn-directory">
-          <i class="fa-solid fa-list-check"></i> Directory
+        <button type="button" class="sidebar-nav-tab" data-tab="directory" role="tab" aria-selected="false" aria-controls="tab-directory" id="tab-btn-directory" tabindex="-1">
+          <i class="fa-solid fa-list-check" aria-hidden="true"></i> Directory
         </button>
-        <button type="button" class="sidebar-nav-tab" data-tab="community" role="tab" aria-selected="false" id="tab-btn-community">
-          <i class="fa-solid fa-bullhorn"></i> Bulletin
+        <button type="button" class="sidebar-nav-tab" data-tab="community" role="tab" aria-selected="false" aria-controls="tab-community" id="tab-btn-community" tabindex="-1">
+          <i class="fa-solid fa-bullhorn" aria-hidden="true"></i> Bulletin
         </button>
-        <button type="button" class="sidebar-nav-tab" data-tab="reports" role="tab" aria-selected="false" id="tab-btn-reports">
-          <i class="fa-solid fa-flag"></i> Reports
+        <button type="button" class="sidebar-nav-tab" data-tab="reports" role="tab" aria-selected="false" aria-controls="tab-reports" id="tab-btn-reports" tabindex="-1">
+          <i class="fa-solid fa-flag" aria-hidden="true"></i> Reports
         </button>
       </nav>
 
@@ -134,18 +134,23 @@
         <!-- ==========================================
              TAB 1: EXPLORE & SEARCH
              ========================================== -->
-        <section class="sidebar-panel-view active" id="tab-explore" role="tabpanel" aria-labelledby="tab-btn-explore">
+        <section class="sidebar-panel-view active" id="tab-explore" role="tabpanel" aria-labelledby="tab-btn-explore" tabindex="0">
           <!-- Room & Facility Search Bar -->
           <div class="search-wrapper">
             <label for="campusSearchInput" class="sr-only">Search classrooms by room number, name, or facility</label>
             <div class="search-input-group">
-              <i class="fa-solid fa-magnifying-glass search-icon" aria-hidden="true"></i>
-              <input type="text" 
-                     id="campusSearchInput" 
-                     class="campus-search-input" 
-                     placeholder="Search room (e.g. 101, 201), lab, ramp, lift..." 
+              <button type="button" class="search-submit-btn" id="searchSubmitBtn" aria-label="Search campus" title="Search">
+                <i class="fa-solid fa-magnifying-glass search-icon" aria-hidden="true"></i>
+              </button>
+              <input type="text"
+                     id="campusSearchInput"
+                     class="campus-search-input"
+                     placeholder="Search building (e.g. MAB), room (101), lab, ramp..."
                      autocomplete="off" />
-              <span class="search-shortcut-badge" title="Shortcut">Ctrl+K</span>
+              <button type="button" class="search-clear-btn" id="searchClearBtn" aria-label="Clear search" title="Clear search" style="display: none;">
+                <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+              </button>
+              <span class="search-shortcut-badge" id="searchShortcutBadge" title="Keyboard Shortcut">Ctrl+K</span>
             </div>
 
             <!-- Auto-complete Dropdown -->
@@ -169,6 +174,32 @@
           <!-- Location Details Card (Appears on marker click or search select) -->
           <div class="location-details-overlay" id="locationDetailsCard" role="region" aria-label="Selected Location Details"></div>
 
+          <!-- Quick Assist: Nearest Accessible Amenities -->
+          <div class="quick-assist-section" id="quickAssistSection" role="region" aria-label="Quick Assist Nearest Facility Finder">
+            <div class="quick-assist-header">
+              <span class="quick-assist-title"><i class="fa-solid fa-bolt" aria-hidden="true"></i> Quick Assist: Nearest Amenity</span>
+              <span class="quick-assist-subtitle" id="quickAssistReferenceText">From: Ground Floor (L0)</span>
+            </div>
+            <div class="quick-assist-buttons-grid" role="toolbar" aria-label="Find Nearest Accessible Facility">
+              <button type="button" class="btn-quick-assist" data-quick-cat="washrooms" aria-label="Find nearest accessible restroom">
+                <i class="fa-solid fa-restroom" style="color: var(--cat-washrooms);" aria-hidden="true"></i>
+                <span>Nearest Restroom</span>
+              </button>
+              <button type="button" class="btn-quick-assist" data-quick-cat="lifts" aria-label="Find nearest wheelchair passenger lift">
+                <i class="fa-solid fa-elevator" style="color: var(--cat-lifts);" aria-hidden="true"></i>
+                <span>Nearest Lift</span>
+              </button>
+              <button type="button" class="btn-quick-assist" data-quick-cat="water" aria-label="Find nearest accessible drinking water station">
+                <i class="fa-solid fa-faucet-drip" style="color: var(--cat-water);" aria-hidden="true"></i>
+                <span>Nearest Water</span>
+              </button>
+              <button type="button" class="btn-quick-assist" data-quick-cat="ramps" aria-label="Find nearest entrance ramp">
+                <i class="fa-solid fa-wheelchair" style="color: var(--cat-ramps);" aria-hidden="true"></i>
+                <span>Nearest Ramp</span>
+              </button>
+            </div>
+          </div>
+
           <!-- Dynamic Category Filters Group -->
           <div class="filters-section-container" id="categoryFiltersGroup">
             <!-- Filter chips rendered dynamically by js/filters.js -->
@@ -177,14 +208,14 @@
           <!-- Quick Accessibility Tips Box -->
           <div class="details-notes-box" style="margin-top: 1rem;">
             <strong><i class="fa-solid fa-lightbulb"></i> Accessibility Tip:</strong>
-            <p>Use the floor buttons at the top to toggle between Ground, 1st, and 2nd Floors. Markers and pathways update automatically.</p>
+            <p>Use the floor buttons at the top to toggle between Ground Floor (L0), First Floor (L1), and Second Floor (L2). Markers and pathways update automatically.</p>
           </div>
         </section>
 
         <!-- ==========================================
              TAB 2: ROUTE PLANNER & DIRECTIONS
              ========================================== -->
-        <section class="sidebar-panel-view" id="tab-routes" role="tabpanel" aria-labelledby="tab-btn-routes">
+        <section class="sidebar-panel-view" id="tab-routes" role="tabpanel" aria-labelledby="tab-btn-routes" tabindex="0">
           <div class="route-form-card">
             <h3 class="filter-heading" style="margin-bottom: 0.75rem;">
               <i class="fa-solid fa-route"></i> Step-Free Route Planner
@@ -221,7 +252,7 @@
         <!-- ==========================================
              TAB 3: CAMPUS DIRECTORY
              ========================================== -->
-        <section class="sidebar-panel-view" id="tab-directory" role="tabpanel" aria-labelledby="tab-btn-directory">
+        <section class="sidebar-panel-view" id="tab-directory" role="tabpanel" aria-labelledby="tab-btn-directory" tabindex="0">
           <div class="directory-filters-bar">
             <div>
               <label for="dirFloorFilter" class="form-label">Floor</label>
@@ -256,7 +287,7 @@
         <!-- ==========================================
              TAB 4: COMMUNITY BULLETIN
              ========================================== -->
-        <section class="sidebar-panel-view" id="tab-community" role="tabpanel" aria-labelledby="tab-btn-community">
+        <section class="sidebar-panel-view" id="tab-community" role="tabpanel" aria-labelledby="tab-btn-community" tabindex="0">
           <div class="community-header-row">
             <div>
               <h3 class="filter-heading">Community Updates</h3>
@@ -286,7 +317,7 @@
         <!-- ==========================================
              TAB 5: REPORT BARRIER / ISSUE TRACKER
              ========================================== -->
-        <section class="sidebar-panel-view" id="tab-reports" role="tabpanel" aria-labelledby="tab-btn-reports">
+        <section class="sidebar-panel-view" id="tab-reports" role="tabpanel" aria-labelledby="tab-btn-reports" tabindex="0">
           <div class="reports-header-row">
             <div>
               <h3 class="filter-heading">Accessibility Barriers</h3>
@@ -305,18 +336,23 @@
       </div>
     </aside>
 
-    <!-- Right Full Map Area -->
-    <main class="map-container-wrapper" role="main" aria-label="Campus Interactive Map View">
-      <!-- Leaflet Map Canvas -->
-      <div id="map"></div>
+    <!-- Right Full Map Area: Campus Navigation -->
+    <main class="map-container-wrapper" id="campusNavigation" role="main" aria-label="Campus Interactive Map View">
+      <!-- Leaflet Map Canvas with Accessible Alternatives -->
+      <div id="map" role="region" aria-label="Interactive Campus Map" tabindex="-1">
+        <div class="sr-only">
+          Interactive campus map showing accessible facilities, entrance ramps, elevators, and routes.
+          All facilities, rooms, and step-free directions are also fully accessible via the text-based Directory, Explore search, and Directions tabs.
+        </div>
+      </div>
 
       <!-- Floating Map Controls -->
       <div class="map-floating-controls" role="toolbar" aria-label="Map Visual Controls">
         <button type="button" class="map-control-btn" onclick="window.CampusApp.map.resetView()" title="Recenter Campus View" aria-label="Recenter campus view">
-          <i class="fa-solid fa-crosshairs"></i>
+          <i class="fa-solid fa-crosshairs" aria-hidden="true"></i>
         </button>
         <button type="button" class="map-control-btn" onclick="window.CampusApp.map.focusBuilding('block-a')" title="Focus Main Academic Block" aria-label="Focus Main Academic Block">
-          <i class="fa-solid fa-building"></i>
+          <i class="fa-solid fa-building" aria-hidden="true"></i>
         </button>
       </div>
 
@@ -329,23 +365,39 @@
         <div class="legend-items-list" id="legendItemsList">
           <div class="legend-item">
             <span class="legend-dot" style="background: var(--cat-ramps)"></span>
-            <span>Ramps & Inclines (1:12)</span>
+            <span>Ramps &amp; Inclines</span>
           </div>
           <div class="legend-item">
             <span class="legend-dot" style="background: var(--cat-lifts)"></span>
-            <span>Wheelchair Passenger Lifts</span>
+            <span>Lifts &amp; Elevators</span>
           </div>
           <div class="legend-item">
             <span class="legend-dot" style="background: var(--cat-washrooms)"></span>
-            <span>Universal Restrooms</span>
+            <span>Accessible Restrooms</span>
           </div>
           <div class="legend-item">
-            <span class="legend-dot" style="background: #10b981; border: 1px dashed #059669;"></span>
-            <span>Tactile Step-Free Path</span>
+            <span class="legend-dot" style="background: var(--cat-water)"></span>
+            <span>Drinking Water</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-dot" style="background: var(--cat-seating)"></span>
+            <span>Rest &amp; Seating Areas</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-dot" style="background: var(--cat-classrooms)"></span>
+            <span>Classrooms &amp; Labs</span>
           </div>
           <div class="legend-item">
             <span class="legend-dot" style="background: var(--cat-stairs)"></span>
             <span>Stairs (Step Alert)</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-dot" style="background: var(--cat-emergency)"></span>
+            <span>Emergency Exits</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-dot" style="background: #10b981; border: 1px dashed #059669;"></span>
+            <span>Step-free Paths</span>
           </div>
         </div>
       </div>
@@ -406,10 +458,11 @@
           </div>
 
           <div class="form-group">
-            <label for="reportSeveritySelect" class="form-label">Severity Level</label>
-            <select id="reportSeveritySelect" name="severity" class="select-custom">
-              <option value="Medium">Medium (Difficult for mobility aids)</option>
+            <label for="reportSeveritySelect" class="form-label">Severity Level *</label>
+            <select id="reportSeveritySelect" name="severity" class="select-custom" required>
+              <option value="" disabled selected>Select Severity Level...</option>
               <option value="Low">Low (Minor inconvenience or map typo)</option>
+              <option value="Medium">Medium (Difficult for mobility aids)</option>
               <option value="Urgent">Urgent / Safety Hazard (Completely impassable)</option>
             </select>
           </div>
@@ -422,15 +475,16 @@
           <div class="form-row-2col">
             <div class="form-group">
               <label for="reportReporterName" class="form-label">Your Name (Optional)</label>
-              <input type="text" id="reportReporterName" name="reporterName" class="input-custom" placeholder="e.g. ISE Student" />
+              <input type="text" id="reportReporterName" name="reporterName" class="input-custom" placeholder="e.g. Sneha (or leave blank)" />
+              <small class="form-help-text" style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-top: 0.25rem;">Optional. Displayed publicly only if provided; leave blank for anonymous report.</small>
             </div>
             <div class="form-group">
               <label for="reportReporterRole" class="form-label">Role</label>
               <select id="reportReporterRole" name="reporterRole" class="select-custom">
                 <option value="Student">Student</option>
                 <option value="Faculty">Faculty</option>
-                <option value="Visitor">Visitor</option>
                 <option value="Staff">Staff</option>
+                <option value="Visitor">Visitor</option>
               </select>
             </div>
           </div>
@@ -462,16 +516,17 @@
         <div class="modal-body">
           <div class="form-row-2col">
             <div class="form-group">
-              <label for="postAuthor" class="form-label">Your Name / Handle *</label>
-              <input type="text" id="postAuthor" name="postAuthor" class="input-custom" placeholder="e.g. Sneha (1st Sem ISE)" required />
+              <label for="postAuthor" class="form-label">Your Name / Handle (Optional)</label>
+              <input type="text" id="postAuthor" name="postAuthor" class="input-custom" placeholder="e.g. Sneha (or leave blank)" />
+              <small class="form-help-text" style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-top: 0.25rem;">Optional. Displayed on public bulletin or posted as "Campus Member".</small>
             </div>
             <div class="form-group">
               <label for="postRole" class="form-label">Your Role</label>
               <select id="postRole" name="postRole" class="select-custom">
                 <option value="Student">Student</option>
-                <option value="Peer Volunteer">Peer Volunteer</option>
                 <option value="Faculty">Faculty</option>
-                <option value="Club Member">Accessibility Club</option>
+                <option value="Staff">Staff</option>
+                <option value="Visitor">Visitor</option>
               </select>
             </div>
           </div>
@@ -506,9 +561,9 @@
   </div>
 
   <!-- Toast Notification System -->
-  <div class="toast-notification" id="campusToast" role="alert" aria-live="assertive">
+  <div class="toast-notification" id="campusToast" role="status" aria-live="polite" aria-atomic="true">
     <i class="fa-solid fa-circle-check"></i>
-    <span class="toast-message">Action successful!</span>
+    <span class="toast-message"></span>
   </div>
 
   <!-- Scripts: Leaflet JS and App Modular Engine -->

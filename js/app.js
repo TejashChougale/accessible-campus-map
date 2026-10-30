@@ -69,18 +69,49 @@ class CampusApp {
     this.bindForms();
     this.bindQuickAssist();
 
+    // 9. Detect platform for keyboard shortcut display badge
+    const shortcutBadge = document.getElementById("searchShortcutBadge");
+    if (shortcutBadge) {
+      const isMac = typeof navigator !== "undefined" && /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform || navigator.userAgent);
+      shortcutBadge.textContent = isMac ? "⌘K" : "Ctrl+K";
+    }
+
     console.log("Accessible Campus Map initialized.");
   }
 
   /**
-   * Bind sidebar navigation tabs
+   * Bind sidebar navigation tabs with full WAI-ARIA tab pattern
    */
   bindSidebarTabs() {
-    const tabButtons = document.querySelectorAll(".sidebar-nav-tab");
-    tabButtons.forEach(btn => {
+    const tabButtons = Array.from(document.querySelectorAll(".sidebar-nav-tab"));
+    tabButtons.forEach((btn, index) => {
       btn.addEventListener("click", () => {
         const tab = btn.getAttribute("data-tab");
         this.switchTab(tab);
+      });
+
+      btn.addEventListener("keydown", (e) => {
+        let targetIndex = null;
+        if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+          e.preventDefault();
+          targetIndex = (index + 1) % tabButtons.length;
+        } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+          e.preventDefault();
+          targetIndex = (index - 1 + tabButtons.length) % tabButtons.length;
+        } else if (e.key === "Home") {
+          e.preventDefault();
+          targetIndex = 0;
+        } else if (e.key === "End") {
+          e.preventDefault();
+          targetIndex = tabButtons.length - 1;
+        }
+
+        if (targetIndex !== null) {
+          const targetBtn = tabButtons[targetIndex];
+          targetBtn.focus();
+          const tab = targetBtn.getAttribute("data-tab");
+          this.switchTab(tab);
+        }
       });
     });
   }
@@ -93,12 +124,14 @@ class CampusApp {
       const isSelected = btn.getAttribute("data-tab") === tabName;
       btn.classList.toggle("active", isSelected);
       btn.setAttribute("aria-selected", isSelected ? "true" : "false");
+      btn.setAttribute("tabindex", isSelected ? "0" : "-1");
     });
 
     // Update panel views
     document.querySelectorAll(".sidebar-panel-view").forEach(panel => {
       const isVisible = panel.getAttribute("id") === `tab-${tabName}`;
       panel.classList.toggle("active", isVisible);
+      panel.setAttribute("aria-hidden", isVisible ? "false" : "true");
     });
 
     // Special refresh on view switch
@@ -226,13 +259,13 @@ class CampusApp {
 
         <div class="details-actions-bar">
           <button type="button" class="btn-primary" onclick="window.CampusApp.filters.selectFloor('L0')">
-            <i class="fa-solid fa-layer-group"></i> View Ground Floor
+            <i class="fa-solid fa-layer-group"></i> View Ground Floor (L0)
           </button>
           <button type="button" class="btn-secondary" onclick="window.CampusApp.filters.selectFloor('L1')">
-            <i class="fa-solid fa-layer-group"></i> View 1st Floor
+            <i class="fa-solid fa-layer-group"></i> View First Floor (L1)
           </button>
           <button type="button" class="btn-secondary" onclick="window.CampusApp.filters.selectFloor('L2')">
-            <i class="fa-solid fa-layer-group"></i> View 2nd Floor
+            <i class="fa-solid fa-layer-group"></i> View Second Floor (L2)
           </button>
           <button type="button" class="btn-secondary btn-mobile-view-map" onclick="window.CampusApp.closeMobileSidebar()">
             <i class="fa-solid fa-map-location-dot"></i> View on Map
@@ -316,9 +349,9 @@ class CampusApp {
   /**
    * Helper to display toast messages
    */
-  showToast(message) {
+  showToast(message, isError = false) {
     if (this.reports && typeof this.reports.showToast === "function") {
-      this.reports.showToast(message);
+      this.reports.showToast(message, isError);
     }
   }
 
@@ -504,6 +537,18 @@ class CampusApp {
       `;
     }
 
+    let emergencyDisclaimerHtml = "";
+    if (loc.category === "emergency") {
+      emergencyDisclaimerHtml = `
+        <div class="emergency-disclaimer-box" role="note">
+          <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+          <div class="emergency-disclaimer-text">
+            <strong>Emergency Notice:</strong> Emergency exit information is provided for general awareness only. Do not rely on this map for emergency evacuation. Follow official campus instructions.
+          </div>
+        </div>
+      `;
+    }
+
     detailsContainer.innerHTML = `
       <div class="details-card-inner">
         <div class="details-card-header">
@@ -525,6 +570,8 @@ class CampusApp {
             ${isStepFree ? 'Step-Free' : 'Contains Steps'}
           </span>
         </div>
+
+        ${emergencyDisclaimerHtml}
 
         <div class="details-specs-grid">
           ${loc.doorWidthCm ? `
@@ -861,6 +908,31 @@ class CampusApp {
     });
 
     destSelect.innerHTML = destOptions;
+
+    // Auto-update route calculation on dropdown or toggle change
+    if (!this._routeListenersBound) {
+      this._routeListenersBound = true;
+      startSelect.addEventListener("change", () => {
+        if (destSelect.value) {
+          this.calculateCurrentRoute();
+        }
+      });
+      destSelect.addEventListener("change", () => {
+        if (destSelect.value) {
+          this.calculateCurrentRoute();
+        } else {
+          this.clearCurrentRoute();
+        }
+      });
+      const stepFreeCheckbox = document.getElementById("stepFreeToggle");
+      if (stepFreeCheckbox) {
+        stepFreeCheckbox.addEventListener("change", () => {
+          if (destSelect.value) {
+            this.calculateCurrentRoute();
+          }
+        });
+      }
+    }
   }
 
   routeToLocation(locationId) {
@@ -893,7 +965,24 @@ class CampusApp {
     const preferStepFree = stepFreeCheckbox ? stepFreeCheckbox.checked : true;
 
     if (!destId) {
-      alert("Please select a destination room or facility.");
+      const resultsPanel = document.getElementById("routeResultsPanel");
+      if (resultsPanel) {
+        resultsPanel.innerHTML = `
+          <div class="active-route-card route-feedback-card warning-card" role="alert">
+            <div class="route-card-header">
+              <div class="route-status-pill status-warning">
+                <i class="fa-solid fa-circle-exclamation"></i> Destination Required
+              </div>
+            </div>
+            <h3 class="route-destination-title">Please Choose a Destination</h3>
+            <p class="route-feedback-message">Select a room, lab, or facility from the destination dropdown to view step-free directions.</p>
+          </div>
+        `;
+      }
+      const announcer = document.getElementById("a11yAnnouncer");
+      if (announcer) {
+        announcer.textContent = "Please select a destination room or facility from the dropdown.";
+      }
       return;
     }
 
@@ -904,10 +993,24 @@ class CampusApp {
   }
 
   clearCurrentRoute() {
-    this.router.activeRoute = null;
-    this.map.clearRoute();
+    if (this.router) {
+      this.router.clearRoute();
+    }
+    if (this.map) {
+      this.map.clearRoute();
+    }
+    const destSelect = document.getElementById("routeDestSelect");
+    if (destSelect) {
+      destSelect.value = "";
+    }
     const container = document.getElementById("routeResultsPanel");
-    if (container) container.innerHTML = "";
+    if (container) {
+      container.innerHTML = "";
+    }
+    const announcer = document.getElementById("a11yAnnouncer");
+    if (announcer) {
+      announcer.textContent = "Route cleared.";
+    }
   }
 
   readRouteAloud() {
@@ -980,11 +1083,21 @@ class CampusApp {
   bindAccessibilityControls() {
     // High contrast toggle
     const contrastBtn = document.getElementById("btnToggleContrast");
+    const contrastLabel = document.getElementById("contrastBtnLabel");
     if (contrastBtn) {
       contrastBtn.addEventListener("click", () => {
         this.isHighContrast = !this.isHighContrast;
         document.body.classList.toggle("high-contrast-mode", this.isHighContrast);
+        const stateLabel = this.isHighContrast ? "High Contrast: On" : "High Contrast: Off";
         contrastBtn.setAttribute("aria-pressed", this.isHighContrast ? "true" : "false");
+        contrastBtn.setAttribute("aria-label", stateLabel);
+        if (contrastLabel) {
+          contrastLabel.textContent = stateLabel;
+        }
+        const announcer = document.getElementById("a11yAnnouncer");
+        if (announcer) {
+          announcer.textContent = `High contrast mode ${this.isHighContrast ? 'enabled' : 'disabled'}.`;
+        }
         this.map.toggleHighContrast(this.isHighContrast);
       });
     }

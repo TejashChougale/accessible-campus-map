@@ -274,6 +274,71 @@ body.high-contrast-mode .nearby-route-btn {
   font-weight: 800 !important;
 }
 
+body.high-contrast-mode .form-error-banner {
+  background: #000000 !important;
+  border: 2px solid #ff0000 !important;
+  color: #ffffff !important;
+}
+
+body.high-contrast-mode .form-error-banner i {
+  color: #ff0000 !important;
+}
+
+body.high-contrast-mode .toast-notification.toast-error {
+  background: #000000 !important;
+  border: 2px solid #ff0000 !important;
+  color: #ffffff !important;
+}
+
+body.high-contrast-mode .toast-notification.toast-error i {
+  color: #ff0000 !important;
+}
+
+body.high-contrast-mode .route-feedback-card {
+  background: #000000 !important;
+  border: 2px solid #ffffff !important;
+  color: #ffffff !important;
+}
+
+body.high-contrast-mode .route-feedback-card.info-card {
+  border-left: 6px solid #ffff00 !important;
+}
+
+body.high-contrast-mode .route-feedback-card.warning-card {
+  border-left: 6px solid #ff0000 !important;
+}
+
+body.high-contrast-mode .route-feedback-message {
+  color: #ffffff !important;
+}
+
+body.high-contrast-mode .route-feedback-hint {
+  background: #111111 !important;
+  border: 1px solid #ffff00 !important;
+  color: #ffff00 !important;
+}
+
+body.high-contrast-mode .status-info {
+  background: #ffff00 !important;
+  color: #000000 !important;
+  font-weight: 800 !important;
+}
+
+body.high-contrast-mode .emergency-disclaimer-box,
+body.high-contrast-mode .popup-alert-box.alert-emergency,
+body.high-contrast-mode .emergency-disclaimer-note {
+  background: #000000 !important;
+  border: 2px solid #ffff00 !important;
+  border-left: 6px solid #ff0000 !important;
+  color: #ffffff !important;
+}
+
+body.high-contrast-mode .emergency-disclaimer-box i,
+body.high-contrast-mode .popup-alert-box.alert-emergency i,
+body.high-contrast-mode .emergency-disclaimer-note i {
+  color: #ff0000 !important;
+}
+
 /* ==========================================================================
    Reduced Motion Preferences
    ========================================================================== */

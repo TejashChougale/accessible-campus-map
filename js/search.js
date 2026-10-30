@@ -77,10 +77,10 @@ class CampusSearch {
       }
     });
 
-    // Global keyboard shortcut: '/' or 'Ctrl+K'
+    // Global keyboard shortcut: '/' or 'Ctrl+K' / 'Cmd+K'
     document.addEventListener("keydown", (e) => {
       if ((e.key === "/" && document.activeElement.tagName !== "INPUT" && document.activeElement.tagName !== "TEXTAREA") ||
-          (e.ctrlKey && e.key.toLowerCase() === "k")) {
+          ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k")) {
         e.preventDefault();
         this.searchInput.focus();
         this.searchInput.select();
@@ -240,7 +240,7 @@ class CampusSearch {
                 <span class="result-code result-building-badge">${b.code}</span>
               </div>
               <div class="result-details">
-                <span><i class="fa-solid fa-layer-group" aria-hidden="true"></i> ${floorCount} Floors (Ground, 1F, 2F)</span>
+                <span><i class="fa-solid fa-layer-group" aria-hidden="true"></i> ${floorCount} Floors (Ground Floor L0, L1, L2)</span>
                 <span class="status-step-free">
                   <i class="fa-solid fa-check" aria-hidden="true"></i> Step-Free Entrances
                 </span>

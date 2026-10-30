@@ -75,6 +75,12 @@ class CampusFilters {
     });
 
     html += `</div>`;
+    html += `
+      <div class="emergency-disclaimer-note" role="note">
+        <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+        <span><strong>Emergency exit notice:</strong> Emergency exit information is provided for general awareness only. Do not rely on this map for emergency evacuation. Follow official campus instructions.</span>
+      </div>
+    `;
     this.filtersContainer.innerHTML = html;
   }
 
@@ -115,6 +121,11 @@ class CampusFilters {
     const announcer = document.getElementById("a11yAnnouncer");
     if (announcer) {
       announcer.textContent = `Viewing ${this.mapController.getFloorName(floorId)}`;
+    }
+
+    // Update Quick Assist reference text if location is not locked
+    if (window.CampusApp && typeof window.CampusApp.updateQuickAssistReference === "function") {
+      window.CampusApp.updateQuickAssistReference();
     }
   }
 

@@ -55,13 +55,44 @@ class CampusCommunityFeed {
   }
 
   openNewPostModal() {
+    this.lastFocusedElement = document.activeElement;
     const modal = document.getElementById("newCommunityPostModal");
     const form = document.getElementById("newCommunityPostForm");
     if (!modal || !form) return;
 
     form.reset();
+    this.clearErrors();
+
     modal.classList.add("open");
     modal.setAttribute("aria-hidden", "false");
+
+    // Attach focus trap & Escape key handler
+    this._modalKeyDownHandler = (e) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        this.closeNewPostModal();
+        return;
+      }
+
+      if (e.key === "Tab") {
+        const focusables = Array.from(modal.querySelectorAll(
+          'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        ));
+        if (focusables.length === 0) return;
+
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    modal.addEventListener("keydown", this._modalKeyDownHandler);
 
     const first = modal.querySelector("input, select, textarea, button");
     if (first) first.focus();
@@ -71,28 +102,82 @@ class CampusCommunityFeed {
     const modal = document.getElementById("newCommunityPostModal");
     if (!modal) return;
 
+    if (this._modalKeyDownHandler) {
+      modal.removeEventListener("keydown", this._modalKeyDownHandler);
+      this._modalKeyDownHandler = null;
+    }
+
     modal.classList.remove("open");
     modal.setAttribute("aria-hidden", "true");
+    this.clearErrors();
+
+    if (this.lastFocusedElement && typeof this.lastFocusedElement.focus === "function") {
+      this.lastFocusedElement.focus();
+    }
+  }
+
+  clearErrors() {
+    const errorBanner = document.getElementById("communityFormErrorBanner");
+    if (errorBanner) {
+      errorBanner.style.display = "none";
+      errorBanner.innerHTML = "";
+    }
+    const form = document.getElementById("newCommunityPostForm");
+    if (form) {
+      form.querySelectorAll("[aria-invalid='true']").forEach(el => {
+        el.removeAttribute("aria-invalid");
+      });
+    }
+  }
+
+  showError(message, targetElement = null) {
+    let errorBanner = document.getElementById("communityFormErrorBanner");
+    const form = document.getElementById("newCommunityPostForm");
+    if (!errorBanner && form) {
+      errorBanner = document.createElement("div");
+      errorBanner.id = "communityFormErrorBanner";
+      errorBanner.className = "form-error-banner";
+      errorBanner.setAttribute("role", "alert");
+      form.insertBefore(errorBanner, form.firstChild);
+    }
+
+    if (errorBanner) {
+      errorBanner.innerHTML = `<i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> <span>${this.escapeHtml(message)}</span>`;
+      errorBanner.style.display = "flex";
+    }
+
+    if (targetElement) {
+      targetElement.setAttribute("aria-invalid", "true");
+      targetElement.focus();
+    }
   }
 
   handlePostSubmit(e) {
     e.preventDefault();
-    const form = e.target;
+    this.clearErrors();
 
-    const author = form.postAuthor ? form.postAuthor.value.trim() : "Peer Volunteer";
+    const form = e.target;
+    const author = form.postAuthor ? form.postAuthor.value.trim() : "";
     const role = form.postRole ? form.postRole.value : "Student";
     const category = form.postCategory ? form.postCategory.value : "path-alert";
     const title = form.postTitle ? form.postTitle.value.trim() : "";
     const content = form.postContent ? form.postContent.value.trim() : "";
 
-    if (!title || !content) {
-      alert("Please provide both a title and details for your community update.");
+    if (!title) {
+      this.showError("Please enter a headline or title for your accessibility update.", form.postTitle);
       return;
     }
 
+    if (!content) {
+      this.showError("Please provide details or advice for your community update.", form.postContent);
+      return;
+    }
+
+    const finalAuthor = author || "Campus Member";
+
     const newPost = {
       id: `COMM-${Date.now()}`,
-      author: author || "ISE Student",
+      author: finalAuthor,
       role: role,
       date: new Date().toISOString().split("T")[0],
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -109,7 +194,7 @@ class CampusCommunityFeed {
     this.closeNewPostModal();
 
     if (window.CampusApp && window.CampusApp.reports) {
-      window.CampusApp.reports.showToast("Your community update has been posted! Thanks for contributing.");
+      window.CampusApp.reports.showToast("Your community update has been saved locally in prototype storage! Thank you for sharing.");
     }
 
     this.renderFeed();
