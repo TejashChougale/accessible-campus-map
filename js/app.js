@@ -69,13 +69,6 @@ class CampusApp {
     this.bindForms();
     this.bindQuickAssist();
 
-    // 9. Detect platform for keyboard shortcut display badge
-    const shortcutBadge = document.getElementById("searchShortcutBadge");
-    if (shortcutBadge) {
-      const isMac = typeof navigator !== "undefined" && /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform || navigator.userAgent);
-      shortcutBadge.textContent = isMac ? "⌘K" : "Ctrl+K";
-    }
-
     console.log("Accessible Campus Map initialized.");
   }
 
@@ -116,7 +109,7 @@ class CampusApp {
     });
   }
 
-  switchTab(tabName) {
+  switchTab(tabName, openMobileSidebar = true) {
     this.activeTab = tabName;
 
     // Update tab buttons
@@ -143,9 +136,9 @@ class CampusApp {
       this.renderDirectoryList();
     }
 
-    // On mobile, keep sidebar open so user sees content
+    // On mobile, keep sidebar open so user sees content only if requested
     const sidebar = document.getElementById("mainSidebar");
-    if (sidebar && window.innerWidth < 900) {
+    if (openMobileSidebar && sidebar && window.innerWidth < 900) {
       sidebar.classList.add("mobile-open");
     }
   }
@@ -166,7 +159,54 @@ class CampusApp {
    */
   selectLocationFromSearch(locationId) {
     this.search.closeResults();
-    this.showLocationDetails(locationId);
+    const isMobile = window.innerWidth < 900;
+    this.showLocationDetails(locationId, !isMobile);
+
+    if (isMobile) {
+      // Automatically close the mobile navigation drawer
+      this.closeMobileSidebar();
+
+      // Ensure map section is visible & scrolled into view
+      const mapSection = document.getElementById("campusNavigation") ||
+                         document.querySelector(".map-container-wrapper") ||
+                         document.getElementById("map");
+      if (mapSection) {
+        if (mapSection.style.display === "none") {
+          mapSection.style.display = "";
+        }
+        const mapEl = document.getElementById("map");
+        if (mapEl && mapEl.style.display === "none") {
+          mapEl.style.display = "";
+        }
+        if (typeof mapSection.scrollIntoView === "function") {
+          mapSection.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }
+
+      // Re-invalidate map size and focus selected location after drawer closes
+      if (this.map) {
+        this.map.invalidateMapSize();
+        const loc = this.data.locations.find(l => l.id === locationId);
+        if (loc) {
+          this.map.selectLocation(loc, false);
+        }
+
+        // Re-invalidate and re-center after mobile drawer animation completes (250-300ms)
+        setTimeout(() => {
+          if (this.map) {
+            this.map.invalidateMapSize();
+            if (loc) {
+              this.map.selectLocation(loc, false);
+            }
+          }
+        }, 300);
+      }
+
+      const loc = this.data.locations.find(l => l.id === locationId);
+      if (loc) {
+        this.showToast(`Navigated to ${loc.name} on map`);
+      }
+    }
   }
 
   /**
@@ -186,7 +226,7 @@ class CampusApp {
     if (!building) return;
 
     if (this.activeTab !== "explore") {
-      this.switchTab("explore");
+      this.switchTab("explore", openMobileSidebar);
     }
 
     if (this.map) {
@@ -358,12 +398,12 @@ class CampusApp {
   /**
    * Show full details card / modal for a specific location
    */
-  showLocationDetails(locationId) {
+  showLocationDetails(locationId, openMobileSidebar = true) {
     const loc = this.data.locations.find(l => l.id === locationId);
     if (!loc) return;
 
     if (this.activeTab !== "explore") {
-      this.switchTab("explore");
+      this.switchTab("explore", openMobileSidebar);
     }
 
     // Switch floor on map if not matching
@@ -645,8 +685,8 @@ class CampusApp {
     detailsContainer.classList.add("open");
     this.updateQuickAssistReference(loc.name);
 
-    // Scroll sidebar into view on mobile
-    if (window.innerWidth < 900) {
+    // Scroll sidebar into view on mobile only if requested
+    if (openMobileSidebar && window.innerWidth < 900) {
       const sidebar = document.getElementById("mainSidebar");
       if (sidebar) sidebar.classList.add("mobile-open");
     }
@@ -1190,9 +1230,16 @@ class CampusApp {
     if (overlay) overlay.classList.remove("show");
     if (mobileMenuBtn) {
       mobileMenuBtn.setAttribute("aria-expanded", "false");
-      mobileMenuBtn.focus();
+      if (window.innerWidth < 900) {
+        mobileMenuBtn.focus();
+      }
     }
-    if (this.map) this.map.invalidateMapSize();
+    if (this.map) {
+      this.map.invalidateMapSize();
+      setTimeout(() => {
+        if (this.map) this.map.invalidateMapSize();
+      }, 300);
+    }
   }
 
   /**

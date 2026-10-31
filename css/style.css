@@ -507,7 +507,7 @@ body {
 
 .search-clear-btn {
   position: absolute;
-  right: 3.5rem;
+  right: 0.75rem;
   top: 50%;
   transform: translateY(-50%);
   background: transparent;
@@ -545,7 +545,7 @@ body {
 
 .campus-search-input {
   width: 100%;
-  padding: 0.75rem 3.2rem 0.75rem 2.6rem;
+  padding: 0.75rem 2.4rem 0.75rem 2.6rem;
   background: var(--surface-subtle);
   border: 1.5px solid var(--border);
   border-radius: var(--radius-md);

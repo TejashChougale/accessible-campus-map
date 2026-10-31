@@ -331,6 +331,7 @@ class CampusMapController {
         keyboard: true,
         alt: `${loc.name} - ${loc.accessibilityRating}`
       });
+      marker.locationId = loc.id;
 
       // Bind accessible popup with responsive constraints
       const popupHtml = this.generatePopupContent(loc);
@@ -455,6 +456,18 @@ class CampusMapController {
         duration: 1.0,
         easeLinearity: 0.25
       });
+    }
+
+    // Open popup for selected marker if present on the current floor
+    if (this.markers && this.markers.length > 0) {
+      const marker = this.markers.find(m => m.locationId === loc.id);
+      if (marker && typeof marker.openPopup === "function") {
+        setTimeout(() => {
+          if (this.map && this.map.hasLayer(marker)) {
+            marker.openPopup();
+          }
+        }, 250);
+      }
     }
 
     // Only notify if explicit and different to prevent mutual recursion loops

@@ -77,10 +77,9 @@ class CampusSearch {
       }
     });
 
-    // Global keyboard shortcut: '/' or 'Ctrl+K' / 'Cmd+K'
+    // Global keyboard shortcut: '/'
     document.addEventListener("keydown", (e) => {
-      if ((e.key === "/" && document.activeElement.tagName !== "INPUT" && document.activeElement.tagName !== "TEXTAREA") ||
-          ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k")) {
+      if (e.key === "/" && document.activeElement.tagName !== "INPUT" && document.activeElement.tagName !== "TEXTAREA") {
         e.preventDefault();
         this.searchInput.focus();
         this.searchInput.select();
