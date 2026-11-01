@@ -1,6 +1,6 @@
 /**
  * ACCESSIBLE CAMPUS MAP - MAP INITIALIZATION & RENDERING ENGINE
- * 
+ *
  * Uses Leaflet.js with OpenStreetMap / CartoDB tiles.
  * Handles custom SVG accessibility markers, floor plan overlays,
  * layer switching, and interactive route rendering.
@@ -129,7 +129,9 @@ class CampusMapController {
    * Sets the map tile layer style (standard, high contrast, or satellite-like)
    */
   setTileLayer(type = "voyager") {
-    if (this.activeTileLayer && this.map) {
+    if (typeof L === "undefined" || !this.map) return;
+
+    if (this.activeTileLayer) {
       this.map.removeLayer(this.activeTileLayer);
     }
 
@@ -191,7 +193,7 @@ class CampusMapController {
         <div class="popup-card">
           <div class="popup-header">
             <span class="popup-badge badge-step-free">
-              <i class="fa-solid fa-check"></i> Step-Free Accessible
+              <i class="fa-solid fa-wheelchair"></i> Accessible Entrances Available
             </span>
             <span class="popup-category" style="color: #2563eb">
               <i class="fa-solid fa-building"></i> Academic Building
@@ -272,9 +274,9 @@ class CampusMapController {
     const isLift = location.category === "lifts";
 
     const markerHtml = `
-      <div class="custom-map-pin ${isStairs ? 'pin-stairs' : ''} ${isRamp ? 'pin-ramp' : ''} ${isLift ? 'pin-lift' : ''}" 
+      <div class="custom-map-pin ${isStairs ? 'pin-stairs' : ''} ${isRamp ? 'pin-ramp' : ''} ${isLift ? 'pin-lift' : ''}"
            style="--pin-color: ${cat.color};"
-           role="img" 
+           role="img"
            aria-label="${location.name} (${cat.label})">
         <div class="pin-badge">
           <i class="fa-solid ${cat.icon}"></i>
@@ -313,7 +315,7 @@ class CampusMapController {
       // Show locations for the selected floor, OR outdoor waypoints if on Ground Floor (L0)
       const floorMatch = (loc.floorId === this.currentFloor) ||
                          (loc.buildingId === "outdoor" && this.currentFloor === "L0");
-      
+
       // Category filter matching
       const catMatch = this.activeFilters.has(loc.category);
 
@@ -396,7 +398,7 @@ class CampusMapController {
         <h3 class="popup-title">${this.escapeHtml(loc.name)}</h3>
         <p class="popup-meta">
           ${buildingLabel ? `<strong>Building:</strong> ${this.escapeHtml(buildingLabel)}<br>` : ''}
-          <strong>Room/ID:</strong> ${this.escapeHtml(loc.code || 'N/A')} | 
+          <strong>Room/ID:</strong> ${this.escapeHtml(loc.code || 'N/A')} |
           <strong>Floor:</strong> ${this.escapeHtml(this.getFloorName(loc.floorId))}
         </p>
 
@@ -438,7 +440,7 @@ class CampusMapController {
    */
   escapeHtml(str) {
     if (!str) return "";
-    return String(str).replace(/[&<>'"]/g, 
+    return String(str).replace(/[&<>'"]/g,
       tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
     );
   }
@@ -450,12 +452,17 @@ class CampusMapController {
     const isDifferent = !this.selectedLocation || this.selectedLocation.id !== loc.id;
     this.selectedLocation = loc;
 
-    // Pan map smoothly to the location
+    // Pan map to the location (respecting reduced motion preferences)
     if (this.map && loc.coords) {
-      this.map.flyTo(loc.coords, 19, {
-        duration: 1.0,
-        easeLinearity: 0.25
-      });
+      const prefersReducedMotion = typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (prefersReducedMotion) {
+        this.map.setView(loc.coords, 19);
+      } else {
+        this.map.flyTo(loc.coords, 19, {
+          duration: 1.0,
+          easeLinearity: 0.25
+        });
+      }
     }
 
     // Open popup for selected marker if present on the current floor
@@ -541,7 +548,7 @@ class CampusMapController {
     if (building && building.polygon) {
       const bounds = L.latLngBounds(building.polygon);
       this.map.fitBounds(bounds, { padding: [50, 50], maxZoom: 19 });
-      
+
       // Highlight polygon and open building popup if available
       if (this.buildingLayers && this.buildingLayers.length > 0) {
         const poly = this.buildingLayers.find(l => l.buildingId === buildingId) || this.buildingLayers[0];
@@ -577,9 +584,14 @@ class CampusMapController {
    */
   resetView() {
     if (!this.map) return;
-    this.map.flyTo(this.data.campusCenter, this.data.defaultZoom, {
-      duration: 0.8
-    });
+    const prefersReducedMotion = typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReducedMotion) {
+      this.map.setView(this.data.campusCenter, this.data.defaultZoom);
+    } else {
+      this.map.flyTo(this.data.campusCenter, this.data.defaultZoom, {
+        duration: 0.8
+      });
+    }
   }
 
   /**
@@ -645,7 +657,9 @@ class CampusMapController {
    */
   toggleHighContrast(enabled) {
     this.isHighContrast = enabled;
-    this.setTileLayer(enabled ? "dark" : "voyager");
+    if (typeof L !== "undefined" && this.map) {
+      this.setTileLayer(enabled ? "dark" : "voyager");
+    }
   }
 }
 

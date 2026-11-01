@@ -1,6 +1,6 @@
 /**
  * ACCESSIBLE CAMPUS MAP - ROUTE PLANNER & ACCESSIBLE PATHFINDER
- * 
+ *
  * Computes step-free, wheelchair-friendly navigation paths
  * between campus starting points and destination rooms/facilities.
  * Generates turn-by-turn guidance, elevator transfer instructions,
@@ -94,7 +94,7 @@ class CampusRouter {
         hasElevator: false,
         warningNotes: [`No 100% step-free route is available to ${targetLoc.name}. This destination requires navigating stairs or stepped thresholds.`]
       };
-      this.activeRoute = noStepFreeResult;
+      this.activeRoute = null;
       return noStepFreeResult;
     }
 
@@ -105,6 +105,7 @@ class CampusRouter {
     // Turn-by-turn steps
     const steps = [];
     let totalDistanceMeters = 0;
+    let currentCoords = startCoords;
 
     // Step 1: Start at Origin
     steps.push({
@@ -122,7 +123,7 @@ class CampusRouter {
         const rampR1 = this.data.locations.find(l => l.code === "R-01");
         waypoints.push([12.93540, 77.53530]);
         waypoints.push(rampR1 ? rampR1.coords : [12.93527, 77.53530]);
-        
+
         steps.push({
           stepNumber: 2,
           type: "ramp",
@@ -142,45 +143,129 @@ class CampusRouter {
           type: "ramp",
           icon: "fa-wheelchair",
           instruction: "Head west from the Accessible Parking bay for 25m along the dedicated level pathway to East Ramp (R-02).",
-          notes: "Gentle 1:14 slope with tactile border plants.",
+          notes: "Demonstration route model: 25m approach to East Ramp. Simulated model assumption, not verified survey measurement.",
           distance: 25
         });
         totalDistanceMeters += 25;
+      } else if (startPoint.id === "SP-EAST-RAMP") {
+        const rampR2 = this.data.locations.find(l => l.code === "R-02");
+        waypoints.push(rampR2 ? rampR2.coords : [12.93480, 77.53587]);
+
+        steps.push({
+          stepNumber: 2,
+          type: "ramp",
+          icon: "fa-wheelchair",
+          instruction: "Ascend East Ramp (R-02) along the gentle 1:14 slope with continuous handrails.",
+          notes: "Demonstration route model: 10m ramp ascent. Simulated model assumption, not verified survey measurement.",
+          distance: 10
+        });
+        totalDistanceMeters += 10;
+      } else if (startPoint.id === "SP-NORTH-RAMP") {
+        const rampR1 = this.data.locations.find(l => l.code === "R-01");
+        waypoints.push(rampR1 ? rampR1.coords : [12.93527, 77.53530]);
+
+        steps.push({
+          stepNumber: 2,
+          type: "ramp",
+          icon: "fa-wheelchair",
+          instruction: "Ascend North Main Entrance Ramp (R-01) with dual-height handrails.",
+          notes: "Demonstration route model: 10m ramp ascent. Simulated model assumption, not verified survey measurement.",
+          distance: 10
+        });
+        totalDistanceMeters += 10;
       }
 
       // Enter Main Atrium
-      waypoints.push([12.93510, 77.53530]);
+      const atriumCoords = [12.93510, 77.53530];
+      waypoints.push(atriumCoords);
       steps.push({
         stepNumber: steps.length + 1,
         type: "door",
         icon: "fa-door-open",
         instruction: "Enter through the automatic motion-sensor sliding doors (110cm width, zero threshold).",
-        notes: "Main Atrium reception and information desk are immediately on your left.",
+        notes: "Demonstration route model: 12m covered approach into Main Atrium. Simulated model assumption, not verified survey measurement.",
         distance: 12
       });
       totalDistanceMeters += 12;
+      currentCoords = atriumCoords;
     }
 
     // Determine vertical transit (elevator) requirement
     const needsElevator = startFloor !== targetLoc.floorId;
+    let usedLift = null;
 
     if (needsElevator) {
-      const atriumLift = this.data.locations.find(l => l.code === "L-01" && l.floorId === startFloor) ||
-                         this.data.locations.find(l => l.code === "L-01");
-      const liftCoords = atriumLift ? atriumLift.coords : [12.93485, 77.53530];
+      // Evaluate candidate accessible lifts (L-01 Main Atrium, L-02 East Wing)
+      const liftCodes = ["L-01", "L-02"];
+      const candidates = [];
+
+      liftCodes.forEach(code => {
+        const startLift = this.data.locations.find(l => l.code === code && l.floorId === startFloor && l.stepFree !== false);
+        const destLift = this.data.locations.find(l => l.code === code && l.floorId === targetLoc.floorId && l.stepFree !== false);
+        if (startLift && destLift) {
+          const rawToLift = this.calculateDistanceMeters(currentCoords, startLift.coords);
+          const toLift = Math.max(12, Math.round(rawToLift !== null ? rawToLift : 20));
+          const rawFromLift = this.calculateDistanceMeters(destLift.coords, targetLoc.coords);
+          const fromLift = Math.max(15, Math.round(rawFromLift !== null ? rawFromLift : 18));
+          candidates.push({
+            code,
+            startLift,
+            destLift,
+            toLiftDist: toLift,
+            corridorDist: fromLift,
+            totalWalk: toLift + fromLift
+          });
+        }
+      });
+
+      // Sort candidate lifts:
+      // Multi-floor accessible routing prioritizes the lift that minimizes corridor walking
+      // distance to the destination room on the target floor (delivering the user to the
+      // target wing/zone). When corridor distances are within 3 meters (or equal),
+      // total walking distance is used as a tiebreaker, defaulting to L-01.
+      candidates.sort((a, b) => {
+        const corridorDiff = a.corridorDist - b.corridorDist;
+        if (Math.abs(corridorDiff) > 3) {
+          return corridorDiff;
+        }
+        const totalWalkDiff = a.totalWalk - b.totalWalk;
+        if (Math.abs(totalWalkDiff) > 3) {
+          return totalWalkDiff;
+        }
+        return a.code === "L-01" ? -1 : 1;
+      });
+
+      const chosen = candidates.length > 0 ? candidates[0] : null;
+      const liftCode = chosen ? chosen.code : "L-01";
+      const liftStart = chosen ? chosen.startLift : (this.data.locations.find(l => l.code === "L-01" && l.floorId === startFloor) || this.data.locations.find(l => l.code === "L-01"));
+      const liftCoords = liftStart ? liftStart.coords : [12.93485, 77.53530];
+      const toLiftDist = chosen ? chosen.toLiftDist : Math.max(12, Math.round(this.calculateDistanceMeters(currentCoords, liftCoords) || 20));
+      const estCorridorM = chosen ? chosen.corridorDist : 18;
+
+      usedLift = {
+        code: liftCode,
+        name: liftCode === "L-02" ? "East Wing Lift (L-02)" : "Main Passenger Lift (L-01)",
+        coords: liftCoords
+      };
+
       waypoints.push(liftCoords);
 
-      const toLiftDist = Math.max(12, Math.round(this.calculateDistanceMeters(startCoords, liftCoords) || 20));
       const startFloorName = this.mapController ? this.mapController.getFloorName(startFloor) : startFloor;
+      const liftDisplayName = liftCode === "L-02" ? "East Wing Lift (L-02)" : "Main Passenger Lift (L-01)";
+      const liftNotes = liftCode === "L-02"
+        ? "Demonstration model elevator (East Wing L-02) for prototype multi-floor navigation testing. Not certified real campus equipment."
+        : "Demonstration model elevator (Main Passenger L-01) for prototype multi-floor navigation testing. Not certified real campus equipment.";
+
       steps.push({
         stepNumber: steps.length + 1,
         type: "lift",
         icon: "fa-elevator",
-        instruction: `Proceed ${toLiftDist}m to Main Passenger Lift (L-01) on ${startFloorName}.`,
-        notes: "Lift features Braille buttons at 95cm height and audio floor voice announcements.",
+        instruction: `Proceed ${toLiftDist}m to ${liftDisplayName} on ${startFloorName}.`,
+        notes: liftNotes,
         distance: toLiftDist
       });
       totalDistanceMeters += toLiftDist;
+      currentCoords = liftCoords;
 
       const destFloorName = this.mapController ? this.mapController.getFloorName(targetLoc.floorId) : targetLoc.floorId;
       const isUp = this.getFloorLevelNumber(targetLoc.floorId) > this.getFloorLevelNumber(startFloor);
@@ -188,17 +273,14 @@ class CampusRouter {
         stepNumber: steps.length + 1,
         type: "lift-transfer",
         icon: isUp ? "fa-arrow-up" : "fa-arrow-down",
-        instruction: `Take Lift L-01 ${isUp ? 'up' : 'down'} to ${destFloorName}.`,
-        notes: "Elevator cabin has rear mirror and safety light curtain to keep doors held open safely.",
+        instruction: `Take ${liftDisplayName} ${isUp ? 'up' : 'down'} to ${destFloorName}.`,
+        notes: "Demonstration elevator transfer model. Not verified physical campus equipment.",
         distance: 0
       });
 
       // Corridor routing on destination floor
       waypoints.push([liftCoords[0], liftCoords[1] + 0.0001]);
       waypoints.push(targetLoc.coords);
-
-      const corridorDist = Math.round(this.calculateDistanceMeters(liftCoords, targetLoc.coords) || 18);
-      const estCorridorM = Math.max(corridorDist, 18);
 
       steps.push({
         stepNumber: steps.length + 1,
@@ -209,11 +291,12 @@ class CampusRouter {
         distance: estCorridorM
       });
       totalDistanceMeters += estCorridorM;
+      currentCoords = targetLoc.coords;
 
     } else {
       // Both origin and destination are on the same floor!
       waypoints.push(targetLoc.coords);
-      const walkDist = Math.round(this.calculateDistanceMeters(startCoords, targetLoc.coords) || 22);
+      const walkDist = Math.round(this.calculateDistanceMeters(currentCoords, targetLoc.coords) || 22);
       const estWalkM = Math.max(walkDist, 15);
       const currentFloorName = this.mapController ? this.mapController.getFloorName(startFloor) : "Ground Floor (L0)";
 
@@ -226,6 +309,7 @@ class CampusRouter {
         distance: estWalkM
       });
       totalDistanceMeters += estWalkM;
+      currentCoords = targetLoc.coords;
     }
 
     // Arrival Step
@@ -245,6 +329,8 @@ class CampusRouter {
     const liftMinutes = needsElevator ? 0.75 : 0;
     const totalEstMinutes = Math.max(1, Math.ceil(walkMinutes + liftMinutes));
 
+    const routeIsStepFree = targetLoc.stepFree !== false;
+
     const routeResult = {
       startId,
       startName,
@@ -254,9 +340,11 @@ class CampusRouter {
       steps,
       totalDistanceMeters,
       totalEstMinutes,
-      isStepFree: preferStepFree && targetLoc.stepFree,
+      isStepFree: routeIsStepFree,
       hasElevator: needsElevator,
-      warningNotes: preferStepFree ? [] : ["This route may contain stairs. Use caution."]
+      usedLiftCode: usedLift ? usedLift.code : null,
+      usedLiftName: usedLift ? usedLift.name : null,
+      warningNotes: routeIsStepFree ? [] : ["This route contains stairs or stepped thresholds. Use caution."]
     };
 
     this.activeRoute = routeResult;
@@ -282,6 +370,114 @@ class CampusRouter {
     return String(str).replace(/[&<>'"]/g,
       tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
     );
+  }
+
+  /**
+   * Retrieves active community reports (either from CampusReportsManager or localStorage)
+   */
+  getActiveUserReports() {
+    let reports = [];
+    if (typeof window !== "undefined" && window.CampusApp && window.CampusApp.reports && Array.isArray(window.CampusApp.reports.reports)) {
+      reports = window.CampusApp.reports.reports;
+    } else {
+      try {
+        const stored = typeof localStorage !== "undefined" ? localStorage.getItem("accessible_campus_user_reports") : null;
+        if (stored) {
+          reports = JSON.parse(stored);
+        } else if (this.data && Array.isArray(this.data.sampleReports)) {
+          reports = this.data.sampleReports;
+        }
+      } catch (e) {
+        if (this.data && Array.isArray(this.data.sampleReports)) {
+          reports = this.data.sampleReports;
+        }
+      }
+    }
+
+    return reports.filter(r => {
+      const status = (r.status || "").toLowerCase();
+      return status !== "resolved";
+    });
+  }
+
+  /**
+   * Checks active community reports for issues matching facilities actually used on this route.
+   * Returns non-blocking advisories without altering route calculation.
+   */
+  findMatchingRouteAdvisories(route) {
+    if (!route) return [];
+
+    const activeReports = this.getActiveUserReports();
+    if (!activeReports || activeReports.length === 0) return [];
+
+    const advisories = [];
+    const matchedFacilities = new Set();
+
+    // 1. Check elevator if route uses an elevator
+    if (route.hasElevator) {
+      const liftCode = route.usedLiftCode || "L-01";
+      const liftReport = activeReports.find(rep => {
+        const text = `${rep.issueType || ''} ${rep.locationName || ''} ${rep.description || ''}`.toLowerCase();
+        if (liftCode === "L-02") {
+          return text.includes("l-02") || text.includes("east wing lift");
+        } else {
+          const isLiftIssue = text.includes("elevator") || text.includes("lift") || text.includes("l-01");
+          const isOtherLift = text.includes("l-02") || text.includes("east wing lift");
+          return isLiftIssue && !isOtherLift;
+        }
+      });
+
+      const facilityName = liftCode === "L-02" ? "Lift L-02" : "Lift L-01";
+      if (liftReport && !matchedFacilities.has(facilityName)) {
+        matchedFacilities.add(facilityName);
+        advisories.push({ facility: facilityName, report: liftReport });
+      }
+    }
+
+    // 2. Check entrance ramps if route uses them
+    const usesNorthRamp = route.startPointId === "SP-GATE" || route.startPointId === "SP-NORTH-RAMP" ||
+                          (route.steps && route.steps.some(s => (s.instruction || '').includes("R-01")));
+    if (usesNorthRamp) {
+      const ramp1Report = activeReports.find(rep => {
+        const text = `${rep.issueType || ''} ${rep.locationName || ''} ${rep.description || ''}`.toLowerCase();
+        return (text.includes("r-01") || (text.includes("north") && text.includes("ramp"))) && !text.includes("r-02");
+      });
+      if (ramp1Report && !matchedFacilities.has("North Entrance Ramp (R-01)")) {
+        matchedFacilities.add("North Entrance Ramp (R-01)");
+        advisories.push({ facility: "North Entrance Ramp (R-01)", report: ramp1Report });
+      }
+    }
+
+    const usesEastRamp = route.startPointId === "SP-PARK" ||
+                         (route.steps && route.steps.some(s => (s.instruction || '').includes("R-02")));
+    if (usesEastRamp) {
+      const ramp2Report = activeReports.find(rep => {
+        const text = `${rep.issueType || ''} ${rep.locationName || ''} ${rep.description || ''}`.toLowerCase();
+        return (text.includes("r-02") || (text.includes("east") && text.includes("ramp"))) && !text.includes("r-01");
+      });
+      if (ramp2Report && !matchedFacilities.has("East Ramp (R-02)")) {
+        matchedFacilities.add("East Ramp (R-02)");
+        advisories.push({ facility: "East Ramp (R-02)", report: ramp2Report });
+      }
+    }
+
+    // 3. Check target destination
+    if (route.targetLocation) {
+      const targetCode = (route.targetLocation.code || '').toLowerCase();
+      const targetName = (route.targetLocation.name || '').toLowerCase();
+      const targetReport = activeReports.find(rep => {
+        const text = `${rep.locationName || ''} ${rep.description || ''}`.toLowerCase();
+        if (targetCode && text.includes(targetCode)) return true;
+        if (targetName && text.includes(targetName)) return true;
+        return false;
+      });
+      if (targetReport && !matchedFacilities.has(route.targetLocation.name)) {
+        matchedFacilities.add(route.targetLocation.name);
+        advisories.push({ facility: route.targetLocation.name, report: targetReport });
+      }
+    }
+
+    return advisories;
   }
 
   /**
@@ -343,7 +539,7 @@ class CampusRouter {
           </p>
           <div class="route-feedback-hint">
             <i class="fa-solid fa-lightbulb" aria-hidden="true"></i>
-            <span>Tip: Uncheck <strong>"Step-free accessible route only"</strong> to view standard walking directions with stairs.</span>
+            <span>Tip: Uncheck <strong>"Prioritize Step-Free Paths"</strong> to view standard walking directions with stairs.</span>
           </div>
           <div class="route-audio-bar">
             <button type="button" class="btn-secondary" onclick="window.CampusApp.clearCurrentRoute()" aria-label="Reset Route">
@@ -375,6 +571,19 @@ class CampusRouter {
     });
 
     const isStepFree = route.isStepFree;
+    const matchingAdvisories = this.findMatchingRouteAdvisories(route);
+
+    let advisoriesHtml = "";
+    if (matchingAdvisories.length > 0) {
+      advisoriesHtml = matchingAdvisories.map(adv => `
+        <div class="route-advisory-box" role="status">
+          <i class="fa-solid fa-circle-exclamation"></i>
+          <div class="route-advisory-text">
+            <strong>Community Report (Unverified):</strong> A user has reported an issue with ${this.escapeHtml(adv.facility)}. Please verify its availability.
+          </div>
+        </div>
+      `).join("");
+    }
 
     const html = `
       <div class="active-route-card">
@@ -391,6 +600,8 @@ class CampusRouter {
         <h3 class="route-destination-title">
           Directions to ${route.targetLocation.name}
         </h3>
+
+        ${advisoriesHtml}
 
         <div class="route-metrics-bar">
           <div class="metric-item">
@@ -433,8 +644,8 @@ class CampusRouter {
         </div>
 
         <div class="route-footer-note">
-          <i class="fa-solid fa-shield-halved"></i> 
-          <span><strong>Safety Note:</strong> Corridors are equipped with 180cm turning radius and non-slip surfaces. Elevators remain in normal operation.</span>
+          <i class="fa-solid fa-shield-halved"></i>
+          <span><strong>Prototype Demonstration Notice:</strong> Route distances and elevator transitions are simulated algorithmic estimates based on a prototype campus model. Facilities and distances are not verified against physical campus surveys in Bagalkot.${route.hasElevator ? ' Route includes passenger elevator transit for floor access.' : ''}</span>
         </div>
       </div>
     `;

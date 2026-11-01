@@ -1,6 +1,6 @@
 /**
  * ACCESSIBLE CAMPUS MAP - MAIN APPLICATION ORCHESTRATOR
- * 
+ *
  * Coordinates all modules:
  * - Map Controller (Leaflet & markers)
  * - Search Controller (Fuzzy search & auto-complete)
@@ -68,6 +68,21 @@ class CampusApp {
     this.renderDirectoryList();
     this.bindForms();
     this.bindQuickAssist();
+
+    // Dynamically calculate and render overview stats from actual data
+    const statsContainer = document.querySelector(".boc-quick-stats");
+    if (statsContainer && this.data && Array.isArray(this.data.locations)) {
+      const bLocs = this.data.locations.filter(l => l.buildingId === "block-a");
+      const uLifts = new Set(bLocs.filter(l => l.category === "lifts").map(l => l.code));
+      const lCount = uLifts.size || 2;
+      const wCount = bLocs.filter(l => l.category === "washrooms").length || 3;
+      const rCount = this.data.locations.filter(l => l.category === "ramps").length || 2;
+      statsContainer.innerHTML = `
+        <span><i class="fa-solid fa-wheelchair" aria-hidden="true"></i> ${rCount} Ramps (Model)</span>
+        <span><i class="fa-solid fa-elevator" aria-hidden="true"></i> ${lCount} Lifts (Demonstration)</span>
+        <span><i class="fa-solid fa-restroom" aria-hidden="true"></i> ${wCount} Restrooms (Model)</span>
+      `;
+    }
 
     console.log("Accessible Campus Map initialized.");
   }
@@ -178,8 +193,9 @@ class CampusApp {
         if (mapEl && mapEl.style.display === "none") {
           mapEl.style.display = "";
         }
+        const prefersReducedMotion = typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
         if (typeof mapSection.scrollIntoView === "function") {
-          mapSection.scrollIntoView({ behavior: "smooth", block: "start" });
+          mapSection.scrollIntoView({ behavior: prefersReducedMotion ? "auto" : "smooth", block: "start" });
         }
       }
 
@@ -253,7 +269,15 @@ class CampusApp {
       `;
     }
 
-    detailsContainer.innerHTML = `
+        const buildingLocs = (this.data && Array.isArray(this.data.locations))
+          ? this.data.locations.filter(l => l.buildingId === building.id)
+          : [];
+        const uniqueLifts = new Set(buildingLocs.filter(l => l.category === "lifts").map(l => l.code));
+        const liftCount = uniqueLifts.size || 2;
+        const washroomCount = buildingLocs.filter(l => l.category === "washrooms").length || 3;
+        const rampCount = (building.entrances ? building.entrances.filter(e => e.type === "ramp" && e.accessible).length : 0) || 2;
+
+        detailsContainer.innerHTML = `
       <div class="details-card-inner">
         <div class="details-card-header">
           <div class="details-cat-tag" style="background-color: #2563eb18; color: #2563eb">
@@ -278,16 +302,21 @@ class CampusApp {
         <div class="details-specs-grid">
           <div class="spec-pill">
             <span class="spec-label"><i class="fa-solid fa-wheelchair"></i> Ramps</span>
-            <span class="spec-value">2 Step-Free Ramps</span>
+            <span class="spec-value">${rampCount} Step-Free Ramps (Model)</span>
           </div>
           <div class="spec-pill">
             <span class="spec-label"><i class="fa-solid fa-elevator"></i> Elevators</span>
-            <span class="spec-value">2 Lifts (Braille & Audio)</span>
+            <span class="spec-value">${liftCount} Lifts (Demonstration Model)</span>
           </div>
           <div class="spec-pill">
             <span class="spec-label"><i class="fa-solid fa-restroom"></i> Restrooms</span>
-            <span class="spec-value">Universal Restrooms</span>
+            <span class="spec-value">${washroomCount} Restrooms (Model)</span>
           </div>
+        </div>
+
+        <div class="prototype-notice-box" role="note" style="margin-top: 0.75rem;">
+          <i class="fa-solid fa-circle-info"></i>
+          <span><strong>Demonstration Model:</strong> Main Academic Block is simulated demonstration data for prototype navigation testing. Physical campus facilities and Bagalkot coordinates (~16.172306, 75.658694) are unverified.</span>
         </div>
 
         ${entrancesHtml}
@@ -331,8 +360,8 @@ class CampusApp {
     this.closeMobileSidebar();
 
     // 2. Ensure map wrapper and container are displayed
-    const mapSection = document.getElementById("campusNavigation") || 
-                       document.querySelector(".map-container-wrapper") || 
+    const mapSection = document.getElementById("campusNavigation") ||
+                       document.querySelector(".map-container-wrapper") ||
                        document.getElementById("map");
     if (mapSection) {
       if (mapSection.style.display === "none") {
@@ -342,8 +371,9 @@ class CampusApp {
       if (mapEl && mapEl.style.display === "none") {
         mapEl.style.display = "";
       }
+      const prefersReducedMotion = typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       if (typeof mapSection.scrollIntoView === "function") {
-        mapSection.scrollIntoView({ behavior: "smooth", block: "start" });
+        mapSection.scrollIntoView({ behavior: prefersReducedMotion ? "auto" : "smooth", block: "start" });
       }
     }
 
@@ -421,8 +451,8 @@ class CampusApp {
     const cat = this.data.categories[loc.category] || {};
     const isStepFree = loc.stepFree;
 
-    const building = (this.data && Array.isArray(this.data.buildings)) 
-      ? this.data.buildings.find(b => b.id === loc.buildingId) 
+    const building = (this.data && Array.isArray(this.data.buildings))
+      ? this.data.buildings.find(b => b.id === loc.buildingId)
       : null;
 
     let buildingBadgeHtml = "";
@@ -434,9 +464,9 @@ class CampusApp {
       `;
     } else if (building) {
       buildingBadgeHtml = `
-        <button type="button" class="loc-building-badge" 
-                onclick="window.CampusApp.showBuildingDetails('${building.id}')" 
-                title="View building details for ${this.escapeHtml(building.name)}" 
+        <button type="button" class="loc-building-badge"
+                onclick="window.CampusApp.showBuildingDetails('${building.id}')"
+                title="View building details for ${this.escapeHtml(building.name)}"
                 aria-label="Building: ${this.escapeHtml(building.name)}. Click to view building details">
           <i class="fa-solid fa-building" aria-hidden="true"></i> ${this.escapeHtml(building.name)}
         </button>
@@ -606,8 +636,11 @@ class CampusApp {
           <span class="loc-code-badge">${loc.code ? 'Room ' + this.escapeHtml(loc.code) : 'ID: ' + this.escapeHtml(loc.id)}</span>
           <span class="loc-floor-badge"><i class="fa-solid fa-layer-group" aria-hidden="true"></i> ${this.escapeHtml(this.map.getFloorName(loc.floorId))}</span>
           <span class="loc-access-badge ${isStepFree ? 'badge-step-free' : 'badge-alert'}">
-            <i class="fa-solid ${isStepFree ? 'fa-check' : 'fa-triangle-exclamation'}" aria-hidden="true"></i> 
+            <i class="fa-solid ${isStepFree ? 'fa-check' : 'fa-triangle-exclamation'}" aria-hidden="true"></i>
             ${isStepFree ? 'Step-Free' : 'Contains Steps'}
+          </span>
+          <span class="loc-demo-badge" style="background: #fef3c7; color: #92400e; font-size: 0.72rem; padding: 2px 7px; border-radius: 9999px; font-weight: 600; border: 1px solid #fcd34d;">
+            <i class="fa-solid fa-flask" aria-hidden="true"></i> Prototype Model
           </span>
         </div>
 
@@ -823,7 +856,7 @@ class CampusApp {
 
     const verifiedMap = {
       "ent-north": "SP-NORTH-RAMP",
-      "ent-east": "SP-PARK"
+      "ent-east": "SP-EAST-RAMP"
     };
 
     const startId = verifiedMap[entranceId];
@@ -841,9 +874,13 @@ class CampusApp {
   routeFromEntrance(entranceId, targetLocationId) {
     const startPointId = this.getVerifiedEntranceStartPointId(entranceId);
     if (!startPointId) {
-      console.error(`Unverified entrance ID: "${entranceId}"`);
+      console.warn(`Unverified entrance ID: "${entranceId}"`);
+      const announcer = document.getElementById("a11yAnnouncer");
+      if (announcer) {
+        announcer.textContent = "No direct step-free route available from this entrance. Please use North Ramp (R-01) or East Ramp (R-02).";
+      }
       if (this.reports && typeof this.reports.showToast === "function") {
-        this.reports.showToast("Selected entrance does not have an active starting point.");
+        this.reports.showToast("No direct step-free route available from this entrance. Please use North Ramp (R-01) or East Ramp (R-02).", "warning");
       }
       return;
     }
@@ -890,20 +927,34 @@ class CampusApp {
     this.calculateCurrentRoute();
 
     // Verify actual outcome after calculation
-    if (this.router && this.router.activeRoute) {
-      const route = this.router.activeRoute;
+    const currentRoute = this.router ? this.router.activeRoute : null;
+    if (currentRoute && !currentRoute.noStepFreeRoute && !currentRoute.isSameLocation && currentRoute.totalDistanceMeters > 0) {
       if (announcer) {
-        announcer.textContent = `Route ready from ${startName} to ${destName}. Total distance ${route.totalDistanceMeters} meters, estimated travel time ${route.totalEstMinutes} minute${route.totalEstMinutes !== 1 ? 's' : ''}.`;
+        announcer.textContent = `Route ready from ${startName} to ${destName}. Total distance ${currentRoute.totalDistanceMeters} meters, estimated travel time ${currentRoute.totalEstMinutes} minute${currentRoute.totalEstMinutes !== 1 ? 's' : ''}.`;
       }
       if (this.reports && typeof this.reports.showToast === "function") {
         this.reports.showToast(`Route calculated from ${startName}`);
+      }
+    } else if (currentRoute && currentRoute.isSameLocation) {
+      if (announcer) {
+        announcer.textContent = `Start and destination are the same: ${destName}. No travel required.`;
+      }
+      if (this.reports && typeof this.reports.showToast === "function") {
+        this.reports.showToast(`You are already at ${destName}.`);
+      }
+    } else if (this.preferStepFree && targetLoc.stepFree === false) {
+      if (announcer) {
+        announcer.textContent = `No step-free route is available from ${startName} to ${destName}. Destination requires stairs.`;
+      }
+      if (this.reports && typeof this.reports.showToast === "function") {
+        this.reports.showToast(`No step-free route available to ${destName}.`, true);
       }
     } else {
       if (announcer) {
         announcer.textContent = `Unable to calculate route from ${startName} to ${destName}.`;
       }
       if (this.reports && typeof this.reports.showToast === "function") {
-        this.reports.showToast("Unable to calculate route. Please try another starting point.");
+        this.reports.showToast("Unable to calculate route. Please try another starting point.", true);
       }
     }
   }
@@ -930,7 +981,7 @@ class CampusApp {
 
     // Populate Destinations
     let destOptions = `<option value="" disabled selected>Select Destination Room / Facility...</option>`;
-    
+
     // Group by category for clarity
     const grouped = {};
     this.data.locations.forEach(loc => {
@@ -987,10 +1038,14 @@ class CampusApp {
   setAsStartPoint(locationId) {
     this.switchTab("routes");
     const startSelect = document.getElementById("routeStartSelect");
+    const destSelect = document.getElementById("routeDestSelect");
     if (startSelect) {
       startSelect.value = locationId;
     }
     this.reports.showToast("Starting point updated.");
+    if (destSelect && destSelect.value) {
+      this.calculateCurrentRoute();
+    }
   }
 
   calculateCurrentRoute() {
@@ -1101,7 +1156,7 @@ class CampusApp {
             <div class="dir-meta">
               <span><i class="fa-solid fa-layer-group"></i> ${this.map.getFloorName(loc.floorId)}</span>
               <span class="${isStepFree ? 'status-step-free' : 'status-stairs'}">
-                <i class="fa-solid ${isStepFree ? 'fa-check' : 'fa-triangle-exclamation'}"></i> 
+                <i class="fa-solid ${isStepFree ? 'fa-check' : 'fa-triangle-exclamation'}"></i>
                 ${isStepFree ? 'Step-Free' : 'Stairs'}
               </span>
             </div>
@@ -1200,9 +1255,10 @@ class CampusApp {
       });
     }
 
-    // Keyboard Escape closes mobile drawer
+    // Keyboard Escape closes mobile drawer (only if no modal is currently open)
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && sidebar && sidebar.classList.contains("mobile-open")) {
+      const hasOpenModal = Boolean(document.querySelector(".modal-backdrop.open"));
+      if (e.key === "Escape" && !hasOpenModal && sidebar && sidebar.classList.contains("mobile-open")) {
         this.closeMobileSidebar();
       }
     });
@@ -1273,7 +1329,7 @@ class CampusApp {
 
   escapeHtml(str) {
     if (!str) return "";
-    return str.replace(/[&<>'"]/g, 
+    return str.replace(/[&<>'"]/g,
       tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
     );
   }

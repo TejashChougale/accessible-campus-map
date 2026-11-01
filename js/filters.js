@@ -1,6 +1,6 @@
 /**
  * ACCESSIBLE CAMPUS MAP - FILTER & FLOOR CONTROLLER
- * 
+ *
  * Manages category filters (ramps, lifts, washrooms, water, stairs, etc.)
  * and floor selection (Ground Floor, 1st Floor, 2nd Floor) with dynamic counts.
  */
@@ -35,7 +35,7 @@ class CampusFilters {
     Object.keys(categories).forEach(catKey => counts[catKey] = 0);
 
     this.data.locations.forEach(loc => {
-      const matchFloor = (loc.floorId === currentFloor) || 
+      const matchFloor = (loc.floorId === currentFloor) ||
                          (loc.buildingId === "outdoor" && currentFloor === "L0");
       if (matchFloor && counts[loc.category] !== undefined) {
         counts[loc.category]++;
@@ -60,8 +60,8 @@ class CampusFilters {
       const isActive = this.mapController.activeFilters.has(catKey);
 
       html += `
-        <button type="button" 
-                class="filter-chip ${isActive ? 'active' : ''} ${catKey === 'stairs' ? 'chip-danger' : ''}" 
+        <button type="button"
+                class="filter-chip ${isActive ? 'active' : ''} ${catKey === 'stairs' ? 'chip-danger' : ''}"
                 data-category="${catKey}"
                 aria-pressed="${isActive ? 'true' : 'false'}"
                 onclick="window.CampusApp.toggleFilterChip('${catKey}')">
@@ -108,7 +108,7 @@ class CampusFilters {
     this.floorButtons.forEach(btn => {
       const isCurrent = btn.getAttribute("data-floor") === floorId;
       btn.classList.toggle("active", isCurrent);
-      btn.setAttribute("aria-selected", isCurrent ? "true" : "false");
+      btn.setAttribute("aria-pressed", isCurrent ? "true" : "false");
     });
 
     // Update map

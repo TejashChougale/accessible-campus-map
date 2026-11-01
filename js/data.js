@@ -1,16 +1,35 @@
 /**
  * ACCESSIBLE CAMPUS MAP - SAMPLE DATA STORE
- * 
- * NOTICE: All campus coordinates, room numbers, accessibility ratings, and path 
- * segments in this file are SAMPLE DEMONSTRATION DATA for educational prototype testing.
- * They should be replaced with verified campus survey data before official deployment.
+ *
+ * CRITICAL DATA INTEGRITY & LOCATION NOTICE:
+ * --------------------------------------------------------------------------
+ * 1. Physical Campus Location: The actual institution is located in Bagalkot,
+ *    Karnataka (approx. 16.172306° N, 75.658694° E - Basaveshwar Engineering College).
+ * 2. Simulated Coordinate Framework: All coordinates in this file (centered
+ *    around [12.93485, 77.53535]) represent an educational prototype schematic
+ *    created for software testing and route algorithm development.
+ * 3. Demonstration Facilities: Elevators (L-01, L-02), entrance ramps (R-01, R-02),
+ *    door clearances, ramp gradients, and room positions are demonstration model
+ *    data and have NOT been verified against physical architectural surveys.
+ * 4. Production Deployment: All coordinates, clearances, and facility statuses
+ *    must be replaced with verified campus GIS and architectural survey data
+ *    before deployment for actual public campus navigation.
+ * --------------------------------------------------------------------------
  */
 
 const CAMPUS_DATA = {
+  // Physical campus reference
+  actualCampusLocation: {
+    institution: "Basaveshwar Engineering College (Autonomous), Bagalkot",
+    approxCoords: [16.172306, 75.658694],
+    status: "Demonstration prototype schematic. Physical survey data required for production deployment."
+  },
+  isDemonstrationData: true,
+
   // Center of the sample college campus
   campusCenter: [12.93485, 77.53535],
   defaultZoom: 18,
-  
+
   // Campus boundary outline for visual context
   campusBoundary: [
     [12.93600, 77.53380],
@@ -56,7 +75,7 @@ const CAMPUS_DATA = {
           coords: [12.93440, 77.53532],
           accessible: false,
           type: "stairs",
-          notes: "4 stone steps (no ramp). Wheelchair users should divert 30m east to East Ramp R-02."
+          notes: "4 stone steps (no ramp). Wheelchair users should divert ~70m east to East Ramp R-02."
         },
         {
           id: "ent-east",
@@ -252,15 +271,16 @@ const CAMPUS_DATA = {
     {
       id: "LOC-G-LIFT1",
       code: "L-01",
-      name: "Main Atrium Passenger Lift (Wheelchair Sized)",
+      name: "Main Atrium Passenger Lift (Simulated Model)",
       category: "lifts",
       buildingId: "block-a",
       floorId: "L0",
       coords: [12.93485, 77.53530],
-      accessibilityRating: "Universal Wheelchair Access",
+      accessibilityRating: "Demonstration Model (Prototype Facility)",
       capacityKg: 1000,
       doorWidthCm: 110,
       stepFree: true,
+      isDemonstration: true,
       features: [
         "Internal dimensions: 150cm x 160cm (Space for turning)",
         "Braille and raised embossed buttons at 95cm height",
@@ -268,26 +288,27 @@ const CAMPUS_DATA = {
         "Full-height mirror on rear wall to assist backing out",
         "Safety light sensor curtains prevent premature door closing"
       ],
-      notes: "Primary elevator serving Ground Floor (L0), Floor 1 (L1), and Floor 2 (L2)."
+      notes: "Simulated demonstration elevator for multi-floor route testing. Not confirmed as physical campus equipment in the actual college."
     },
     {
       id: "LOC-G-LIFT2",
       code: "L-02",
-      name: "East Wing Stretcher & Service Lift",
+      name: "East Wing Stretcher & Service Lift (Simulated Model)",
       category: "lifts",
       buildingId: "block-a",
       floorId: "L0",
       coords: [12.93470, 77.53570],
-      accessibilityRating: "High Capacity Accessible",
+      accessibilityRating: "Demonstration Model (Prototype Facility)",
       capacityKg: 1250,
       doorWidthCm: 120,
       stepFree: true,
+      isDemonstration: true,
       features: [
         "Extra-large cabin capable of motorized oversized wheelchairs",
         "Voice synthesizer and chime indicators",
         "Dual horizontal button pads"
       ],
-      notes: "Alternative elevator located near the East Wing exit."
+      notes: "Simulated demonstration elevator for multi-floor route testing. Not confirmed as physical campus equipment in the actual college."
     },
     {
       id: "LOC-G-WASH1",
@@ -405,7 +426,7 @@ const CAMPUS_DATA = {
         "Screen magnifier software (NVDA & ZoomText) installed on stations 1-4",
         "High-contrast large-print keycaps available on request"
       ],
-      notes: "Accessible from Lift L-01: Exit lift, turn right and proceed 15m down corridor.",
+      notes: "Accessible from Lift L-01: Exit lift, turn right and proceed 35m down corridor.",
       contact: "Lab In-charge: Ext 301"
     },
     {
@@ -452,37 +473,39 @@ const CAMPUS_DATA = {
     {
       id: "LOC-1-LIFT1",
       code: "L-01",
-      name: "Floor 1 Landing - Main Atrium Lift",
+      name: "Floor 1 Landing - Main Atrium Lift (Simulated Model)",
       category: "lifts",
       buildingId: "block-a",
       floorId: "L1",
       coords: [12.93485, 77.53530],
-      accessibilityRating: "Universal Wheelchair Access",
+      accessibilityRating: "Demonstration Model (Prototype Facility)",
       doorWidthCm: 110,
       stepFree: true,
+      isDemonstration: true,
       features: [
         "Audio and tactile level 1 chime indicator",
         "Flush threshold transition to corridor tiles",
         "Call button at 95cm height with tactile star symbol"
       ],
-      notes: "Direct connection to Ground Floor and 2nd Floor."
+      notes: "Simulated demonstration elevator for multi-floor route testing. Not confirmed as physical campus equipment in the actual college."
     },
     {
       id: "LOC-1-LIFT2",
       code: "L-02",
-      name: "Floor 1 Landing - East Wing Lift",
+      name: "Floor 1 Landing - East Wing Lift (Simulated Model)",
       category: "lifts",
       buildingId: "block-a",
       floorId: "L1",
       coords: [12.93470, 77.53570],
-      accessibilityRating: "Accessible Elevator",
+      accessibilityRating: "Demonstration Model (Prototype Facility)",
       doorWidthCm: 120,
       stepFree: true,
+      isDemonstration: true,
       features: [
         "Wide landing area suitable for power wheelchairs",
         "Voice announcement"
       ],
-      notes: "Closest lift to Seminar Hall 204."
+      notes: "Simulated demonstration elevator for multi-floor route testing. Not confirmed as physical campus equipment in the actual college."
     },
     {
       id: "LOC-1-WASH1",
@@ -569,7 +592,7 @@ const CAMPUS_DATA = {
         "Wall-mounted Evac+Chair emergency descent chair for mobility-impaired individuals",
         "Direct two-way voice intercom with campus fire marshals"
       ],
-      notes: "Designated waiting zone for wheelchair users during a fire evacuation."
+      notes: "Demonstration Data: Designated waiting zone for mobility assistance. Prototype reference only; follow official campus evacuation orders."
     },
 
     // ==========================================
@@ -639,70 +662,74 @@ const CAMPUS_DATA = {
     {
       id: "LOC-2-LIFT1",
       code: "L-01",
-      name: "Floor 2 Landing - Main Atrium Lift",
+      name: "Floor 2 Landing - Main Atrium Lift (Simulated Model)",
       category: "lifts",
       buildingId: "block-a",
       floorId: "L2",
       coords: [12.93485, 77.53530],
-      accessibilityRating: "Universal Wheelchair Access",
+      accessibilityRating: "Demonstration Model (Prototype Facility)",
       doorWidthCm: 110,
       stepFree: true,
+      isDemonstration: true,
       features: [
         "Voice announcement: 'Second Floor - Department Library & Research Labs'",
         "Embossed Braille floor plates on outer door frames"
       ],
-      notes: "Uppermost stop for Main Atrium Lift."
+      notes: "Simulated demonstration elevator for multi-floor route testing. Not confirmed as physical campus equipment in the actual college."
     },
     {
       id: "LOC-2-LIFT2",
       code: "L-02",
-      name: "Floor 2 Landing - East Wing Lift",
+      name: "Floor 2 Landing - East Wing Lift (Simulated Model)",
       category: "lifts",
       buildingId: "block-a",
       floorId: "L2",
       coords: [12.93470, 77.53570],
-      accessibilityRating: "Accessible Elevator",
+      accessibilityRating: "Demonstration Model (Prototype Facility)",
       doorWidthCm: 120,
       stepFree: true,
+      isDemonstration: true,
       features: [
         "Direct step-free connection to Floor 2 classrooms"
       ],
-      notes: "East Wing access."
+      notes: "Simulated demonstration elevator for multi-floor route testing. Not confirmed as physical campus equipment in the actual college."
     },
     {
       id: "LOC-2-WASH1",
       code: "W-03",
-      name: "Accessible Restroom (Floor 2 West)",
+      name: "Accessible Restroom (Floor 2 West - Demonstration Model)",
       category: "washrooms",
       buildingId: "block-a",
       floorId: "L2",
-      coords: [12.93495, 77.53555],
-      accessibilityRating: "Full Universal Standard",
+      coords: [12.93495, 77.53505],
+      accessibilityRating: "Demonstration Model (Unverified Survey Data)",
       doorWidthCm: 95,
       stepFree: true,
+      isDemonstration: true,
       features: [
         "Motorized push-button automatic sliding door",
         "Dual support grab bars, emergency pull cord",
         "Lowered sink with thermal mixing valve (anti-scalding)"
       ],
-      notes: "Accessible to all students and staff."
+      notes: "Simulated demonstration facility in prototype schematic. Coordinates and specifications are unverified against physical Bagalkot campus surveys."
     },
     {
       id: "LOC-2-WATER1",
       code: "DW-03",
-      name: "Water Dispenser Station (Floor 2)",
+      name: "Water Dispenser Station (Floor 2 - Demonstration Model)",
       category: "water",
       buildingId: "block-a",
       floorId: "L2",
-      coords: [12.93478, 77.53535],
-      accessibilityRating: "Accessible Height",
+      coords: [12.93478, 77.53505],
+      accessibilityRating: "Demonstration Model (Unverified Survey Data)",
       heightCm: 79,
       stepFree: true,
+      isDemonstration: true,
       features: [
         "Sensor-activated hands-free spout",
         "Clear foot & knee clearance space"
       ],
-      notes: "Filter replaced bi-weekly."
+      notes: "Simulated demonstration facility in prototype schematic. Coordinates and specifications are unverified against physical Bagalkot campus surveys."
     },
     {
       id: "LOC-2-SEAT1",
@@ -751,7 +778,7 @@ const CAMPUS_DATA = {
         "Emergency evacuation tracked stair chair",
         "Emergency intercom to central control room"
       ],
-      notes: "Muster point for mobility assistance in fire drills or emergencies."
+      notes: "Demonstration Data: Muster point for mobility assistance. Prototype reference only; follow official campus evacuation orders."
     },
 
     // ==========================================
@@ -795,35 +822,42 @@ const CAMPUS_DATA = {
     }
   ],
 
-  // Common Starting Points for Route Calculations
+  // Common Starting Points for Route Calculations (Demonstration Schematic Coordinates)
   startingPoints: [
     {
       id: "SP-GATE",
       name: "Campus Main Gate & Drop-off Bay",
       coords: [12.93560, 77.53530],
       floorId: "L0",
-      description: "Street level taxi / van drop-off with zero-curb transition"
+      description: "Street level taxi / van drop-off (Demonstration schematic coordinate)"
     },
     {
       id: "SP-PARK",
       name: "East Accessible Parking Bay",
       coords: [12.93480, 77.53630],
       floorId: "L0",
-      description: "Direct walkway to East Ramp R-02"
+      description: "Direct walkway to East Ramp R-02 (Demonstration schematic coordinate)"
     },
     {
       id: "SP-NORTH-RAMP",
       name: "North Main Entrance Ramp (R-01)",
       coords: [12.93527, 77.53530],
       floorId: "L0",
-      description: "Ground floor main covered entrance"
+      description: "Ground floor main covered entrance (Demonstration schematic coordinate)"
+    },
+    {
+      id: "SP-EAST-RAMP",
+      name: "East Wing Entrance Ramp (R-02)",
+      coords: [12.93480, 77.53587],
+      floorId: "L0",
+      description: "Direct step-free entrance via East Ramp R-02 (Demonstration schematic coordinate)"
     },
     {
       id: "SP-ATRIUM",
       name: "Ground Floor Main Atrium (Near Lift L-01)",
       coords: [12.93485, 77.53530],
       floorId: "L0",
-      description: "Inside the building next to passenger elevators"
+      description: "Inside the building next to passenger elevators (Demonstration schematic coordinate)"
     }
   ],
 
@@ -835,7 +869,7 @@ const CAMPUS_DATA = {
       role: "Student Disability Representative",
       date: "2026-10-24",
       time: "14:30",
-      badge: "Verified Update",
+      badge: "Sample Advisory",
       category: "maintenance",
       title: "Main Atrium Lift L-01 routine servicing completed",
       content: "The monthly maintenance check for Lift L-01 was completed this morning. Voice announcements and door safety sensors are working smoothly.",
@@ -848,9 +882,9 @@ const CAMPUS_DATA = {
       role: "Student",
       date: "2026-10-23",
       time: "11:15",
-      badge: "Path Alert",
+      badge: "Sample Notice",
       category: "path-alert",
-      title: "Temporary construction scaffolding near South Courtyard",
+      title: "Temporary gardening and maintenance near South Courtyard",
       content: "Gardening work underway near the South stairs. Wheelchair users should please use the North Ramp R-01 or East Ramp R-02 to avoid dust and obstacles.",
       helpfulCount: 19,
       status: "active"
@@ -861,7 +895,7 @@ const CAMPUS_DATA = {
       role: "Faculty Coordinator, ISE Dept",
       date: "2026-10-20",
       time: "09:00",
-      badge: "Resource Info",
+      badge: "Sample Notice",
       category: "resource",
       title: "Tactile keycaps and screen magnifier available in Lab 1",
       content: "Lab 1 (Room 201, Floor 1) now has NVDA screen reading and oversized contrast keycaps ready at Workstation 1 and 2 for all programming sessions.",
@@ -874,7 +908,7 @@ const CAMPUS_DATA = {
       role: "Administration",
       date: "2026-10-18",
       time: "16:45",
-      badge: "Facility Upgrade",
+      badge: "Sample Notice",
       category: "facility",
       title: "Automatic sliding sensor added to 2nd Floor Accessible Washroom",
       content: "Washroom W-03 on the 2nd Floor now has a touchless sensor door button to assist users with limited hand mobility.",
@@ -887,7 +921,7 @@ const CAMPUS_DATA = {
   sampleReports: [
     {
       id: "REP-01",
-      issueType: "Minor Obstacle",
+      issueType: "Blocked Ramp or Pathway",
       building: "Main Academic Block (MAB)",
       floor: "Ground Floor (L0)",
       locationName: "Corridor near Lab 102",
@@ -899,9 +933,9 @@ const CAMPUS_DATA = {
     },
     {
       id: "REP-02",
-      issueType: "Lighting / Visibility",
+      issueType: "Other Accessibility Barrier",
       building: "Main Academic Block (MAB)",
-      floor: "First Floor (L1)",
+      floor: "Ground Floor (L0)",
       locationName: "East Ramp landing junction",
       description: "One overhead LED tube light was flickering near the ramp sign.",
       severity: "Medium",

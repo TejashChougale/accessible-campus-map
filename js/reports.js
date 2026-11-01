@@ -1,6 +1,6 @@
 /**
  * ACCESSIBLE CAMPUS MAP - ISSUE REPORTING & MAP CORRECTIONS MODULE
- * 
+ *
  * Allows students and visitors to report accessibility barriers (blocked ramps,
  * broken elevators, missing signage) and propose map corrections.
  * Persists reports in browser localStorage with status tracking.
@@ -18,19 +18,53 @@ class CampusReportsManager {
    * Loads initial reports from localStorage or fallback to sample seed data
    */
   loadReports() {
+    const versionKey = "accessible_campus_reports_version";
+    const currentVersion = "v7.0";
+
     try {
       const stored = localStorage.getItem(this.storageKey);
+      const storedVersion = localStorage.getItem(versionKey);
+
       if (stored) {
-        this.reports = JSON.parse(stored);
+        const loadedReports = JSON.parse(stored);
+        if (storedVersion !== currentVersion) {
+          // Version migration: preserve user-submitted reports, refresh demo reports from data.js
+          const seedIds = new Set((this.data.sampleReports || []).map(r => r.id));
+          const userReports = loadedReports.filter(r => !seedIds.has(r.id) || r.verificationStatus === "Community Reported (Unverified)");
+          const freshSeedReports = (this.data.sampleReports || []).map(seed => {
+            const existing = loadedReports.find(r => r.id === seed.id);
+            return existing && existing.status === "Resolved" ? { ...seed, status: existing.status } : { ...seed };
+          });
+          this.reports = [...userReports, ...freshSeedReports];
+          this.saveReports();
+          localStorage.setItem(versionKey, currentVersion);
+        } else {
+          this.reports = loadedReports;
+        }
       } else {
-        // Seed with sample reports from data.js
         this.reports = [...(this.data.sampleReports || [])];
         this.saveReports();
+        localStorage.setItem(versionKey, currentVersion);
       }
     } catch (e) {
       console.warn("Could not read localStorage for reports, using memory store:", e);
       this.reports = [...(this.data.sampleReports || [])];
     }
+  }
+
+  generateUniqueReportId() {
+    let candidate;
+    let attempts = 0;
+    do {
+      const rand = Math.floor(1000 + Math.random() * 9000);
+      candidate = `REP-${rand}`;
+      attempts++;
+    } while (this.reports.some(r => r.id === candidate) && attempts < 100);
+
+    if (this.reports.some(r => r.id === candidate)) {
+      candidate = `REP-${Date.now().toString().slice(-6)}`;
+    }
+    return candidate;
   }
 
   saveReports() {
@@ -170,7 +204,6 @@ class CampusReportsManager {
     const severity = severitySelect ? severitySelect.value : "";
     const reporterName = form.reporterName ? form.reporterName.value.trim() : "";
     const reporterRole = form.reporterRole ? form.reporterRole.value : "Student";
-    const contact = form.reporterContact ? form.reporterContact.value.trim() : "";
 
     if (!severity || severity === "") {
       this.showError("Please select an issue severity level (Low, Medium, or Urgent).", severitySelect);
@@ -184,8 +217,8 @@ class CampusReportsManager {
 
     const finalReporterName = reporterName || `Anonymous ${reporterRole}`;
 
-    // Generate new ticket
-    const newId = `REP-${Math.floor(1000 + Math.random() * 9000)}`;
+    // Generate new unique ticket ID
+    const newId = this.generateUniqueReportId();
     const newReport = {
       id: newId,
       issueType,
@@ -196,10 +229,10 @@ class CampusReportsManager {
       severity,
       reporterName: finalReporterName,
       reporterRole,
-      contact,
       status: "Reported",
       submittedAt: new Date().toISOString().split("T")[0],
-      resolutionNote: "Under review by Student Disability & Campus Facilities Cell."
+      verificationStatus: "Community Reported (Unverified)",
+      resolutionNote: ""
     };
 
     // Add to top of reports
@@ -210,7 +243,7 @@ class CampusReportsManager {
     this.closeModal();
 
     // Show toast notification specifying local prototype storage
-    this.showToast(`Report ${newId} saved locally in prototype storage. Thank you for contributing!`);
+    this.showToast(`Report ${newId} saved locally in prototype storage. Submissions are stored in your browser only and not sent to campus authorities.`);
 
     // Refresh reports list view
     this.renderReportsList();
@@ -220,6 +253,7 @@ class CampusReportsManager {
     if (floorId === "L0") return "Ground Floor (L0)";
     if (floorId === "L1") return "First Floor (L1)";
     if (floorId === "L2") return "Second Floor (L2)";
+    if (floorId === "outdoor" || floorId === "na") return "Outdoor / Ground Level";
     return floorId;
   }
 
@@ -268,11 +302,15 @@ class CampusReportsManager {
         severityClass = "sev-medium";
       }
 
+      const isUnverified = rep.verificationStatus === "Community Reported (Unverified)" ||
+                           (!rep.resolutionNote && rep.status.toLowerCase() !== "resolved");
+
       html += `
         <div class="report-card">
           <div class="report-card-top">
             <span class="report-id">${rep.id}</span>
             <div class="report-tags">
+              ${isUnverified ? `<span class="report-badge badge-unverified"><i class="fa-solid fa-triangle-exclamation"></i> Community Reported (Unverified)</span>` : ''}
               <span class="report-sev ${severityClass}">${rep.severity} Severity</span>
               <span class="report-status ${statusBadgeClass}">
                 <i class="fa-solid ${statusIcon}"></i> ${rep.status}
@@ -294,7 +332,11 @@ class CampusReportsManager {
               <strong><i class="fa-solid fa-comment-dots"></i> Facilities Update:</strong>
               <span>${this.escapeHtml(rep.resolutionNote)}</span>
             </div>
-          ` : ''}
+          ` : `
+            <div class="report-prototype-note">
+              <i class="fa-solid fa-circle-info"></i> Stored locally in browser prototype. Not sent to campus authorities.
+            </div>
+          `}
         </div>
       `;
     });
@@ -310,9 +352,11 @@ class CampusReportsManager {
     const msgEl = toast.querySelector(".toast-message");
     if (msgEl) msgEl.textContent = message;
 
-    const iconEl = toast.querySelector(".toast-icon i");
+    const iconEl = toast.querySelector(".toast-icon i") || toast.querySelector("i");
     if (iconEl) {
-      if (isError) {
+      if (isError === "warning") {
+        iconEl.className = "fa-solid fa-triangle-exclamation";
+      } else if (isError) {
         iconEl.className = "fa-solid fa-circle-exclamation";
       } else {
         iconEl.className = "fa-solid fa-check";
@@ -331,7 +375,7 @@ class CampusReportsManager {
 
   escapeHtml(str) {
     if (!str) return "";
-    return str.replace(/[&<>'"]/g, 
+    return str.replace(/[&<>'"]/g,
       tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
     );
   }

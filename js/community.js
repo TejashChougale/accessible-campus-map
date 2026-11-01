@@ -1,6 +1,6 @@
 /**
  * ACCESSIBLE CAMPUS MAP - COMMUNITY BULLETIN & ACCESSIBILITY UPDATES
- * 
+ *
  * Allows students, faculty, and peer volunteers to share crowdsourced
  * accessibility tips, obstacle alerts, elevator status, and study advice.
  * Persists updates and "Helpful" upvotes in browser localStorage.
@@ -19,13 +19,33 @@ class CampusCommunityFeed {
   }
 
   loadPosts() {
+    const versionKey = "accessible_campus_community_version";
+    const currentVersion = "v7.0";
+
     try {
       const stored = localStorage.getItem(this.storageKey);
+      const storedVersion = localStorage.getItem(versionKey);
+
       if (stored) {
-        this.posts = JSON.parse(stored);
+        const loadedPosts = JSON.parse(stored);
+        if (storedVersion !== currentVersion) {
+          // Version migration: preserve user-submitted posts, refresh demo posts from data.js
+          const seedIds = new Set((this.data.communityUpdates || []).map(p => p.id));
+          const userPosts = loadedPosts.filter(p => !seedIds.has(p.id) || p.badge === "Community Tip");
+          const freshSeedPosts = (this.data.communityUpdates || []).map(seed => {
+            const existing = loadedPosts.find(p => p.id === seed.id);
+            return existing ? { ...seed, helpfulCount: existing.helpfulCount } : { ...seed };
+          });
+          this.posts = [...userPosts, ...freshSeedPosts];
+          this.savePosts();
+          localStorage.setItem(versionKey, currentVersion);
+        } else {
+          this.posts = loadedPosts;
+        }
       } else {
         this.posts = [...(this.data.communityUpdates || [])];
         this.savePosts();
+        localStorage.setItem(versionKey, currentVersion);
       }
 
       const storedVotes = localStorage.getItem(this.upvotesStorageKey);
@@ -181,7 +201,7 @@ class CampusCommunityFeed {
       role: role,
       date: new Date().toISOString().split("T")[0],
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      badge: "Community Tip",
+      badge: "Community Tip (Unverified)",
       category: category,
       title: title,
       content: content,
@@ -194,7 +214,7 @@ class CampusCommunityFeed {
     this.closeNewPostModal();
 
     if (window.CampusApp && window.CampusApp.reports) {
-      window.CampusApp.reports.showToast("Your community update has been saved locally in prototype storage! Thank you for sharing.");
+      window.CampusApp.reports.showToast("Your community update has been saved locally in prototype storage. Submissions are stored in your browser only and are not official campus announcements.");
     }
 
     this.renderFeed();
@@ -204,7 +224,8 @@ class CampusCommunityFeed {
     const post = this.posts.find(p => p.id === postId);
     if (!post) return;
 
-    if (this.userUpvotes.has(postId)) {
+    const hadUpvoted = this.userUpvotes.has(postId);
+    if (hadUpvoted) {
       post.helpfulCount = Math.max(0, post.helpfulCount - 1);
       this.userUpvotes.delete(postId);
     } else {
@@ -215,10 +236,29 @@ class CampusCommunityFeed {
     this.savePosts();
     this.saveUpvotes();
     this.renderFeed();
+
+    // Preserve keyboard focus on the upvote button after feed rerender
+    const restoredBtn = document.querySelector(`button[data-helpful-post-id="${postId}"]`);
+    if (restoredBtn) {
+      restoredBtn.focus();
+    }
+
+    const announcer = document.getElementById("a11yAnnouncer");
+    if (announcer) {
+      announcer.textContent = hadUpvoted
+        ? `Removed helpful vote for "${post.title}". Total: ${post.helpfulCount}.`
+        : `Marked "${post.title}" as helpful. Total: ${post.helpfulCount}.`;
+    }
   }
 
   filterCategory(cat) {
     this.currentCategory = cat;
+    // Update aria-pressed on category filter buttons
+    const filterButtons = document.querySelectorAll("[onclick*='filterCategory']");
+    filterButtons.forEach(btn => {
+      const match = btn.getAttribute("onclick") && btn.getAttribute("onclick").includes(`'${cat}'`);
+      btn.setAttribute("aria-pressed", match ? "true" : "false");
+    });
     this.renderFeed();
   }
 
@@ -267,6 +307,11 @@ class CampusCommunityFeed {
         catLabel = "Study Resource";
       }
 
+      const isCommunityTip = (post.badge && post.badge.toLowerCase().includes("community")) ||
+                             (post.id && String(post.id).startsWith("COMM-1"));
+      const badgeClass = isCommunityTip ? "badge-community" : "badge-sample";
+      const displayBadge = post.badge || (isCommunityTip ? "Community Tip (Unverified)" : "Sample Notice");
+
       html += `
         <article class="community-post-card">
           <div class="post-card-header">
@@ -279,9 +324,12 @@ class CampusCommunityFeed {
                 <span class="author-role">${this.escapeHtml(post.role)}</span>
               </div>
             </div>
-            <span class="post-cat-badge ${catBadgeClass}">
-              <i class="fa-solid ${catIcon}"></i> ${catLabel}
-            </span>
+            <div class="post-header-badges">
+              <span class="post-badge ${badgeClass}">${this.escapeHtml(displayBadge)}</span>
+              <span class="post-cat-badge ${catBadgeClass}">
+                <i class="fa-solid ${catIcon}"></i> ${catLabel}
+              </span>
+            </div>
           </div>
 
           <h4 class="post-title">${this.escapeHtml(post.title)}</h4>
@@ -292,8 +340,9 @@ class CampusCommunityFeed {
               <i class="fa-regular fa-clock"></i> ${post.date} ${post.time ? '· ' + post.time : ''}
             </span>
 
-            <button type="button" 
-                    class="btn-helpful ${hasUpvoted ? 'active' : ''}" 
+            <button type="button"
+                    class="btn-helpful ${hasUpvoted ? 'active' : ''}"
+                    data-helpful-post-id="${post.id}"
                     onclick="window.CampusApp.community.toggleHelpful('${post.id}')"
                     aria-label="Mark update as helpful. Current count: ${post.helpfulCount}">
               <i class="fa-${hasUpvoted ? 'solid' : 'regular'} fa-thumbs-up"></i>
@@ -310,7 +359,7 @@ class CampusCommunityFeed {
 
   escapeHtml(str) {
     if (!str) return "";
-    return str.replace(/[&<>'"]/g, 
+    return str.replace(/[&<>'"]/g,
       tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
     );
   }

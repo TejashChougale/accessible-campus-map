@@ -1,6 +1,6 @@
 /**
  * ACCESSIBLE CAMPUS MAP - ACCESSIBILITY STYLESHEET
- * 
+ *
  * WCAG 2.1 AAA Compliant High-Contrast Mode, Focus Outlines,
  * Screen Reader Utilities, and Reduced Motion.
  */
@@ -41,14 +41,14 @@ body.high-contrast-mode {
   --primary-hover: #e6e600;
   --primary-light: #1a1a00;
   --primary-dark: #b3b300;
-  
+
   --secondary: #000000;
   --surface: #000000;
   --surface-alt: #121212;
   --surface-subtle: #1e1e1e;
   --border: #ffffff;
   --border-strong: #ffff00;
-  
+
   --text-main: #ffffff;
   --text-muted: #dddddd;
   --text-light: #aaaaaa;

@@ -1,77 +1,82 @@
 # ♿ Accessible Campus Map
 
 > **An interactive, step-free navigation and accessibility tool designed for college students, staff, and campus visitors.**
-> Built with vanilla **HTML5**, **CSS3**, and **JavaScript**, powered by **Leaflet.js** and **OpenStreetMap**.
+> Built with vanilla **HTML5**, **CSS3**, and **JavaScript**, powered by **Leaflet.js** and **CARTO Voyager** (OpenStreetMap contributors).
 
 ---
 
-## 📌 Project Status
+## 📌 Project Status & Geographic Context
 
-This project is an **active educational demonstration prototype** developed to demonstrate accessible digital campus navigation. It implements responsive multi-floor schematics, debounced search, step-free route calculation, nearest amenity resolution, barrier reporting, and high-contrast styling.
+This project is an **active educational demonstration prototype** developed to test accessible digital campus navigation concepts.
 
 > [!IMPORTANT]
-> **Sample Demonstration Data Notice:**
-> The current building layout, room numbers, door clearances, and coordinates in `js/data.js` are **sample demonstration data** representing a simulated academic engineering building (Main Academic Block). While core routing logic and verified starting point mappings are functional, the specific physical coordinates and facility ratings are demonstration examples and must be verified against certified university architectural surveys prior to any production deployment.
+> **Campus Location & Simulated Model Notice:**
+> - **Physical Institution:** The project is intended for the campus of **Basaveshwar Engineering College, Bagalkot, Karnataka** (approx. **16.172306° N, 75.658694° E**).
+> - **Simulated Prototype Coordinate Framework:** For software engineering and user interface demonstration, the current interactive map operates within a simulated 3-story academic building schematic placed at prototype coordinates (`12.93485, 77.53535`).
+> - **Demonstration Facilities:** Passenger elevators (**L-01** and **L-02**), entrance ramps (**R-01** and **R-02**), door widths, ramp gradients, and room layout coordinates in `js/data.js` are **simulated prototype demonstration data** created to model multi-floor accessible pathfinding. They are **not confirmed or certified physical campus facilities** of the actual Bagalkot college building.
+> - **Production Requirement:** Before any real-world navigational deployment, all building geometries, room locations, entrance clearances, and elevator specifications must be replaced with certified on-site architectural and GIS surveys.
 
 ---
 
 ## 🧭 Genuine Implemented Features
 
-- **Responsive Multi-Device Navigation:** Designed and tested across compact phones (320px–430px), tablets (768px–820px), and desktop displays with responsive touch controls and an accessible off-canvas drawer.
+- **Responsive Multi-Device Navigation:** Designed and simulated across compact phones (320px–430px), tablets (768px–820px), and desktop displays with responsive touch controls and an accessible off-canvas drawer.
 - **Multi-Level Floor Switching:** Native support for **Ground Floor (L0)**, **First Floor (L1)**, and **Second Floor (L2)**, dynamically updating map markers, room counts, and tactile approach pathways.
 - **Room & Facility Search:** Instant, debounced text search across buildings, room numbers (e.g. `101`, `201`, `302`), labs, ramps, elevators, restrooms, and emergency exits with keyboard-navigable suggestions.
-- **Building Context & Accessible Entrances:** Contextual badges link rooms to their parent buildings. Displays accessible entrance guidance with verified ramp slopes and door widths where available.
-- **Verified "Route from Here" Feature:** Computes step-free paths directly from verified building entrances (`SP-NORTH-RAMP` for North Ramp R-01, `SP-PARK` for East Ramp R-02) into the building and destinations.
-- **Step-Free Route Planning:** Computes wheelchair-friendly paths that avoid staircases, including elevator transfer guidance between floors, transit time estimates, and step-by-step instructions.
+- **Building Context & Accessible Entrances:** Contextual badges link rooms to their parent buildings. Displays accessible entrance guidance with simulated ramp slopes and door widths from the prototype schematic.
+- **Prototype "Route from Here" Feature:** Computes step-free paths directly from mapped demonstration building entrances (`SP-NORTH-RAMP` for North Ramp R-01, `SP-EAST-RAMP` for East Ramp R-02) into the building and destinations.
+- **Step-Free Route Planning & Dynamic Lift Evaluation:** Computes wheelchair-friendly paths that avoid staircases, including dynamic evaluation of candidate elevators (L-01 and L-02) based on calculated walking distance to demonstrate optimal elevator selection.
 - **Stair & Step Alert System:** Highlights stairways with distinct visual warning pins and badges to help users with mobility aids prevent entering inaccessible paths.
 - **Quick Assist Nearest Amenity Finder:** 1-tap resolution of the closest accessible amenity (restrooms, passenger lifts, drinking water points, entrance ramps) with automatic same-floor preference weighting.
-- **Audio Route Guidance:** Built-in screen reader support via the Web Speech API to read turn-by-turn directions aloud.
+- **Audio Route Guidance:** Spoken turn-by-turn route assistance powered by the Web Speech API (synthesized voice assistance; does not replace native system screen readers like NVDA or VoiceOver).
 - **Accessibility Barrier Reporting:** Interactive modal form allowing campus members to report temporary barriers (e.g., elevator out of service, blocked ramp) with client-side prototype persistence via browser `localStorage`.
 - **Community Bulletin Feed:** A bulletin board for students and staff to share crowdsourced accessibility updates and study resource alerts with local upvoting.
-- **Visual Accessibility & Contrast Modes:** Accessible toggle supporting high-contrast mode (exceeding WCAG 2.1 / 2.2 AA contrast standards) and a 3-stage font size adjuster (Normal, Large, Extra Large).
+- **Visual Accessibility & Contrast Modes:** Accessible toggle supporting high-contrast mode (aligned with WCAG 2.1 AA contrast standards) and a 3-stage font size adjuster (Normal, Large, Extra Large).
 
 ---
 
 ## 🛠️ Technologies Used
 
 - **HTML5:** Semantic landmark architecture (`<nav>`, `<main>`, `<aside>`, `<article>`), ARIA live regions (`role="status"`, `role="alert"`), landmark focus attributes (`tabindex="-1"`), and WAI-ARIA tab navigation patterns.
-- **CSS3:** Custom properties (CSS variables) for modular theming, WCAG AA contrast compliance (>4.5:1 against light surfaces), Flexbox and CSS Grid responsive layouts, GPU-accelerated compositing (`transform`, `opacity`), dynamic viewport heights (`100dvh`), and reduced-motion preferences (`prefers-reduced-motion`).
+- **CSS3:** Custom properties (CSS variables) for modular theming, WCAG AA contrast compliance (>=4.5:1 against light surfaces), Flexbox and CSS Grid responsive layouts, GPU-accelerated compositing (`transform`, `opacity`), dynamic viewport heights (`100dvh`), and reduced-motion preferences (`prefers-reduced-motion`).
 - **JavaScript (Vanilla ES6+):** Modular object-oriented architecture without external frameworks or bundlers. Features debounced input processing, Euclidean distance and floor-penalty heuristics, and `localStorage` state management.
 - **Leaflet.js (v1.9.4):** Lightweight, mobile-friendly interactive mapping engine handling custom SVG category markers, floor-filtered layer groups (`L.layerGroup`), building footprint polygons, and route polylines.
-- **OpenStreetMap:** Open tile layers providing realistic geographic and urban context surrounding campus buildings.
+- **CARTO Voyager / OpenStreetMap:** High-clarity raster tiles providing geographic context surrounding campus buildings.
 
 ---
 
-## 🚀 How to Run and Test on Windows 11 (Step-by-Step)
+## 🚀 How to Run and Test Locally
 
 Because this application is built with vanilla HTML, CSS, and JavaScript, **no build tools, compilers, or database installations are required.**
 
-### Method 1: The Quickest Way (Zero Setup - 10 Seconds)
-1. Open **File Explorer** on Windows 11 (<kbd>Win</kbd> + <kbd>E</kbd>).
-2. Navigate to the project directory: `D:\Antigravity`
-3. Locate **`index.html`**.
-4. **Double-click `index.html`** (or right-click and choose *Open with -> Google Chrome* or *Microsoft Edge*).
-5. The Accessible Campus Map will open and run in your browser.
+### Method 1: The Quickest Way (Zero Setup)
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/<owner>/accessible-campus-map.git
+   cd accessible-campus-map
+   ```
+2. Double-click `index.html` (or right-click and choose *Open with -> Google Chrome* or *Microsoft Edge*).
+3. The Accessible Campus Map will open and run in your browser.
 
 ---
 
-### Method 2: Using VS Code "Live Server" (Recommended for Development)
-1. Open **Visual Studio Code**.
-2. Go to **File -> Open Folder...** and select `D:\Antigravity`.
-3. In the Extensions tab (<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>X</kbd>), search for **"Live Server"** by *Ritwick Dey* and install it.
-4. Right-click `index.html` in the file explorer and choose **"Open with Live Server"**.
-5. Your default browser will open `http://127.0.0.1:5500/index.html`. File edits will automatically reload in real time.
-
----
-
-### Method 3: Using Python Local HTTP Server
-If Python is installed on your Windows machine:
-1. Open Windows Terminal or PowerShell in `D:\Antigravity`.
+### Method 2: Using Python Local HTTP Server
+If Python is installed on your machine:
+1. Open PowerShell or a terminal in the project directory.
 2. Run:
-   ```powershell
+   ```bash
    python -m http.server 8000
    ```
 3. Open your browser and navigate to `http://localhost:8000`.
+
+---
+
+### Method 3: Using VS Code "Live Server"
+1. Open **Visual Studio Code**.
+2. Go to **File -> Open Folder...** and select the project directory.
+3. In the Extensions tab (<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>X</kbd>), install **"Live Server"** by *Ritwick Dey*.
+4. Right-click `index.html` in the file explorer and choose **"Open with Live Server"**.
+5. Your default browser will open `http://127.0.0.1:5500/index.html`.
 
 ---
 
@@ -82,17 +87,15 @@ To test mobile behavior directly on your desktop:
 1. Open the project in **Google Chrome** or **Microsoft Edge**.
 2. Press <kbd>F12</kbd> (or <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>I</kbd>) to open Developer Tools.
 3. Click the **Toggle device toolbar** button (<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>M</kbd>).
-4. Test across common device viewports:
-   - **320px:** iPhone SE (1st generation) / compact Android
-   - **360px:** Budget Android devices (Samsung Galaxy A series)
-   - **375px:** iPhone SE (2nd/3rd gen), iPhone 12/13 mini
-   - **390px:** iPhone 13/14/15
-   - **430px:** iPhone 14/15/16 Pro Max
-   - **768px & 820px:** Tablets (iPad Mini / iPad Air)
-   - **1200px+:** Full Desktop
+4. Test across common responsive device viewports:
+   - **320px–360px:** Compact mobile viewports
+   - **375px–430px:** Modern smartphone viewports
+   - **768px–820px:** Tablet viewports
+   - **1024px+:** Desktop viewports
 5. **Key Responsive Behaviors to Verify:**
    - The top header wraps gracefully without overlapping text or controls.
    - The hamburger button slides an off-canvas drawer with an accessible close button.
+   - Selecting a location on mobile viewports automatically closes the drawer and displays the map.
    - The map container automatically updates its dimensions via `ResizeObserver` without tile distortion.
    - The map legend collapses with a single tap to expand the visible map area.
    - Details cards provide a **"View on Map"** shortcut that slides the mobile drawer away smoothly.
@@ -115,7 +118,7 @@ To test mobile behavior directly on your desktop:
 ## 📂 File Architecture
 
 ```text
-D:\Antigravity\
+accessible-campus-map/
 ├── index.html               # Main HTML document with accessible landmark tags and ARIA attributes
 ├── README.md                # Project documentation and setup guide
 ├── css/
@@ -134,18 +137,21 @@ D:\Antigravity\
 
 ---
 
-## ⚠️ Limitations
+## ⚠️ Limitations & Data Integrity Disclosures
 
-1. **Sample / Simulated Data:** The building geometries, room coordinates, door measurements, and elevator technical specifications in `js/data.js` are sample demonstration values created for prototype testing. They do not represent official architectural surveys.
-2. **Emergency Route Certification Disclaimer:** Paths and emergency exit locations are displayed strictly for general orientation and interface demonstration. **They are not certified for real-world emergency evacuation** (e.g. fire, earthquake). Users must always follow official campus emergency signage, alarms, and safety officer directions.
-3. **Internet Requirement for Map Tiles:** Core interface controls, directory browsing, room search, path calculation, barrier reporting, and community updates function offline. However, interactive OpenStreetMap base tiles require an internet connection to download map imagery.
-4. **Client-Side Prototype Storage:** User-submitted barrier reports and community updates are persisted in the browser's `localStorage` for testing purposes and are not linked to a live university backend or ticketing server.
+1. **Geographic Coordinates & Campus Location:** The physical college campus is located in Bagalkot, Karnataka (**16.172306° N, 75.658694° E**). The current software prototype uses a simulated demonstration layout with coordinates in an arbitrary Bangalore bounding box (`12.93485, 77.53535`). These coordinates do not represent GPS coordinates of the real college building.
+2. **Prototype Facilities (Lifts & Ramps):** Passenger elevators (`L-01`, `L-02`) and entrance ramps (`R-01`, `R-02`) are **simulated prototype model facilities** created to develop and test multi-floor route calculations. They are not confirmed real-world facilities in the Bagalkot campus building.
+3. **Route Distance & Measurement Assumptions:** Distances reported by the route planner (e.g. 22m entrance approach, 114m total path) are mathematical model estimates based on the simulated coordinate grid, not on-site physical surveyor measurements.
+4. **Emergency Route Certification Disclaimer:** Paths and emergency exit locations are displayed strictly for general orientation and interface demonstration. **They are not certified for real-world emergency evacuation** (e.g. fire, earthquake). Users must always follow official campus emergency signage, alarms, and safety officer directions.
+5. **Internet Requirement for Map Tiles:** Core interface controls, directory browsing, room search, path calculation, barrier reporting, and community updates function offline. However, interactive CARTO Voyager base tiles require an internet connection to download map imagery.
+6. **Client-Side Prototype Storage:** User-submitted barrier reports and community updates are persisted in the browser's `localStorage` for testing purposes and are not linked to a live university backend or ticketing server.
 
 ---
 
 ## 🔮 Future Improvements
 
-- **Official Campus GIS Integration:** Replacing simulated coordinates with official university spatial surveys and CAD/BIM floor plans.
+- **Official Campus GIS Integration:** Replacing simulated prototype coordinates (`12.934...`) with certified university spatial surveys and CAD/BIM floor plans from the actual Bagalkot campus (`16.172306, 75.658694`).
+- **Verified Facility Audits:** Conducting certified on-site accessibility audits to map genuine elevators, ramps, door clearances, and tactile paths.
 - **Backend API & Facilities Ticketing:** Connecting the barrier reporting system to campus facilities management for real-time ticket tracking.
 - **Indoor Positioning Support:** Exploring Bluetooth Low Energy (BLE) beacons, Wi-Fi RTT, or QR code checkpoint scans for real-time indoor blue-dot navigation.
 - **Multi-Building Expansion:** Extending step-free routing across multiple academic, library, residential, and athletic complexes across the full university campus.

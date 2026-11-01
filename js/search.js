@@ -1,6 +1,6 @@
 /**
  * ACCESSIBLE CAMPUS MAP - SEARCH ENGINE & AUTOCOMPLETE
- * 
+ *
  * Supports fast searching by:
  * - Building name, code, full title (e.g. "Main Academic Block", "MAB", "Engineering")
  * - Room number (e.g. "101", "201", "302")
@@ -69,7 +69,7 @@ class CampusSearch {
 
     // Close dropdown on click outside
     document.addEventListener("click", (e) => {
-      if (!this.searchInput.contains(e.target) && 
+      if (!this.searchInput.contains(e.target) &&
           !this.resultsContainer.contains(e.target) &&
           (!this.searchBtn || !this.searchBtn.contains(e.target)) &&
           (!this.clearBtn || !this.clearBtn.contains(e.target))) {
@@ -79,7 +79,9 @@ class CampusSearch {
 
     // Global keyboard shortcut: '/'
     document.addEventListener("keydown", (e) => {
-      if (e.key === "/" && document.activeElement.tagName !== "INPUT" && document.activeElement.tagName !== "TEXTAREA") {
+      const isInput = ["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement.tagName) || document.activeElement.isContentEditable;
+      const isModalOpen = Boolean(document.querySelector(".modal-backdrop.open"));
+      if (e.key === "/" && !isInput && !isModalOpen) {
         e.preventDefault();
         this.searchInput.focus();
         this.searchInput.select();
@@ -124,11 +126,11 @@ class CampusSearch {
         const codeMatch = b.code && b.code.toLowerCase().includes(q);
         const idMatch = b.id && b.id.toLowerCase().includes(q);
         const descMatch = b.description && b.description.toLowerCase().includes(q);
-        
+
         let entranceMatch = false;
         if (b.entrances && Array.isArray(b.entrances)) {
-          entranceMatch = b.entrances.some(ent => 
-            (ent.name && ent.name.toLowerCase().includes(q)) || 
+          entranceMatch = b.entrances.some(ent =>
+            (ent.name && ent.name.toLowerCase().includes(q)) ||
             (ent.notes && ent.notes.toLowerCase().includes(q))
           );
         }
@@ -154,14 +156,14 @@ class CampusSearch {
       this.data.locations.forEach(loc => {
         const cat = (this.data.categories && this.data.categories[loc.category]) || {};
         const catLabel = cat.label || "";
-        
+
         const codeMatch = loc.code && loc.code.toLowerCase().includes(q);
         const nameMatch = loc.name && loc.name.toLowerCase().includes(q);
         const catMatch = (loc.category && loc.category.toLowerCase().includes(q)) ||
                          (catLabel && catLabel.toLowerCase().includes(q));
         const notesMatch = loc.notes && loc.notes.toLowerCase().includes(q);
         const featureMatch = loc.features && loc.features.some(f => f.toLowerCase().includes(q));
-        
+
         // Match building context
         let buildingMatch = false;
         if (this.data.buildings) {
@@ -203,6 +205,8 @@ class CampusSearch {
   }
 
   renderResults(results, query) {
+    const announcer = document.getElementById("a11yAnnouncer");
+
     if (!results || results.length === 0) {
       this.resultsContainer.innerHTML = `
         <div class="search-empty-state">
@@ -212,10 +216,25 @@ class CampusSearch {
         </div>
       `;
       this.resultsContainer.classList.add("open");
+      if (this.searchInput) {
+        this.searchInput.setAttribute("aria-expanded", "true");
+        this.searchInput.removeAttribute("aria-activedescendant");
+      }
+      if (announcer) {
+        announcer.textContent = `No accessible rooms or facilities found matching "${query}".`;
+      }
       return;
     }
 
-    let html = `<div class="search-results-list" role="listbox" aria-label="Search suggestions">`;
+    if (this.searchInput) {
+      this.searchInput.setAttribute("aria-expanded", "true");
+    }
+
+    if (announcer) {
+      announcer.textContent = `${results.length} search match${results.length !== 1 ? 'es' : ''} found. Use up and down arrow keys to browse.`;
+    }
+
+    let html = `<div class="search-results-list" role="listbox" id="searchResultsList" aria-label="Search suggestions">`;
 
     results.slice(0, 8).forEach((item, index) => {
       if (item.type === "building") {
@@ -223,8 +242,8 @@ class CampusSearch {
         const floorCount = b.floors ? b.floors.length : 3;
 
         html += `
-          <div class="search-result-item search-result-building" 
-               role="option" 
+          <div class="search-result-item search-result-building"
+               role="option"
                id="search-opt-${index}"
                tabindex="0"
                data-type="building"
@@ -268,8 +287,8 @@ class CampusSearch {
         }
 
         html += `
-          <div class="search-result-item" 
-               role="option" 
+          <div class="search-result-item"
+               role="option"
                id="search-opt-${index}"
                tabindex="0"
                data-type="location"
@@ -288,7 +307,7 @@ class CampusSearch {
                 ${buildingTagHtml}
                 <span><i class="fa-solid fa-layer-group" aria-hidden="true"></i> ${floorName}</span>
                 <span class="${isStepFree ? 'status-step-free' : 'status-stairs'}">
-                  <i class="fa-solid ${isStepFree ? 'fa-check' : 'fa-triangle-exclamation'}" aria-hidden="true"></i> 
+                  <i class="fa-solid ${isStepFree ? 'fa-check' : 'fa-triangle-exclamation'}" aria-hidden="true"></i>
                   ${isStepFree ? 'Step-Free' : 'Stairs Alert'}
                 </span>
               </div>
@@ -300,6 +319,15 @@ class CampusSearch {
         `;
       }
     });
+
+    if (results.length > 8) {
+      html += `
+        <div class="search-truncation-indicator" role="status" aria-live="polite">
+          <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+          <span>Showing 8 of ${results.length} matches. Type more characters to narrow results.</span>
+        </div>
+      `;
+    }
 
     html += `</div>`;
     this.resultsContainer.innerHTML = html;
@@ -362,6 +390,12 @@ class CampusSearch {
       return;
     }
 
+    if (e.key === " " && document.activeElement && document.activeElement.classList.contains("search-result-item")) {
+      e.preventDefault();
+      document.activeElement.click();
+      return;
+    }
+
     if (e.key === "Escape") {
       this.closeResults();
       return;
@@ -390,11 +424,15 @@ class CampusSearch {
   }
 
   updateActiveItem(items) {
+    const prefersReducedMotion = typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     items.forEach((item, index) => {
       if (index === this.activeSuggestionIndex) {
         item.classList.add("active");
         item.setAttribute("aria-selected", "true");
-        item.scrollIntoView({ block: "nearest" });
+        if (this.searchInput) {
+          this.searchInput.setAttribute("aria-activedescendant", item.id || `search-opt-${index}`);
+        }
+        item.scrollIntoView({ block: "nearest", behavior: prefersReducedMotion ? "auto" : "smooth" });
       } else {
         item.classList.remove("active");
         item.setAttribute("aria-selected", "false");
@@ -422,6 +460,10 @@ class CampusSearch {
       this.resultsContainer.classList.remove("open");
       this.resultsContainer.innerHTML = "";
     }
+    if (this.searchInput) {
+      this.searchInput.setAttribute("aria-expanded", "false");
+      this.searchInput.removeAttribute("aria-activedescendant");
+    }
     this.activeSuggestionIndex = -1;
   }
 
@@ -433,7 +475,7 @@ class CampusSearch {
 
   escapeHtml(str) {
     if (!str) return "";
-    return str.replace(/[&<>'"]/g, 
+    return str.replace(/[&<>'"]/g,
       tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
     );
   }

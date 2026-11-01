@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="Accessible Campus Map - An inclusive, step-free navigation and accessibility tool for college students and visitors." />
   <title>Accessible Campus Map | Inclusive College Navigation</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♿</text></svg>" />
 
   <!-- Google Fonts: Plus Jakarta Sans -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -42,9 +43,9 @@
   </aside>
 
   <!-- Main Website Header -->
-  <header class="site-header" role="banner">
+  <header class="site-header">
     <div class="brand-section">
-      <button type="button" class="btn-hamburger" id="mobileMenuToggle" aria-label="Toggle navigation drawer" aria-expanded="false">
+      <button type="button" class="btn-hamburger" id="mobileMenuToggle" aria-label="Toggle navigation drawer" aria-expanded="false" aria-controls="mainSidebar">
         <i class="fa-solid fa-bars"></i>
       </button>
 
@@ -62,16 +63,16 @@
     <div class="header-controls">
       <!-- Floor Switcher Group -->
       <nav class="floor-switcher-container" id="floorSwitcherGroup" aria-label="Select Campus Building Floor">
-        <button type="button" class="floor-btn active" data-floor="L0" aria-selected="true" title="Switch to Ground Floor (L0)">
+        <button type="button" class="floor-btn active" data-floor="L0" aria-pressed="true" title="Switch to Ground Floor (L0)">
           <i class="fa-solid fa-layer-group" aria-hidden="true"></i>
           <span class="floor-name-full">Ground Floor (L0)</span>
           <span class="floor-name-short">G</span>
         </button>
-        <button type="button" class="floor-btn" data-floor="L1" aria-selected="false" title="Switch to First Floor (L1)">
+        <button type="button" class="floor-btn" data-floor="L1" aria-pressed="false" title="Switch to First Floor (L1)">
           <span class="floor-name-full">First Floor (L1)</span>
           <span class="floor-name-short">1F</span>
         </button>
-        <button type="button" class="floor-btn" data-floor="L2" aria-selected="false" title="Switch to Second Floor (L2)">
+        <button type="button" class="floor-btn" data-floor="L2" aria-pressed="false" title="Switch to Second Floor (L2)">
           <span class="floor-name-full">Second Floor (L2)</span>
           <span class="floor-name-short">2F</span>
         </button>
@@ -79,7 +80,7 @@
 
       <!-- Accessibility Toolbar Options -->
       <div class="a11y-toolbar" role="toolbar" aria-label="Visual Accessibility Options">
-        <button type="button" class="btn-toolbar" id="btnToggleContrast" aria-pressed="false" title="Toggle High Contrast Mode" aria-label="High Contrast: Off">
+        <button type="button" class="btn-toolbar" id="btnToggleContrast" aria-pressed="false" title="Toggle High Contrast Mode" aria-label="High Contrast Mode">
           <i class="fa-solid fa-circle-half-stroke" aria-hidden="true"></i>
           <span class="btn-label" id="contrastBtnLabel">High Contrast: Off</span>
         </button>
@@ -135,6 +136,7 @@
              TAB 1: EXPLORE & SEARCH
              ========================================== -->
         <section class="sidebar-panel-view active" id="tab-explore" role="tabpanel" aria-labelledby="tab-btn-explore" tabindex="0">
+          <h2 class="sr-only">Campus Exploration &amp; Quick Assist</h2>
           <!-- Room & Facility Search Bar -->
           <div class="search-wrapper">
             <label for="campusSearchInput" class="sr-only">Search classrooms by room number, name, or facility</label>
@@ -145,7 +147,11 @@
               <input type="text"
                      id="campusSearchInput"
                      class="campus-search-input"
-                     placeholder="Search building (e.g. MAB), room (101), lab, ramp..."
+                     placeholder="Search building (e.g. MAB), room (101), lab, ramp... (Press / to focus)"
+                     role="combobox"
+                     aria-autocomplete="list"
+                     aria-expanded="false"
+                     aria-controls="searchResultsDropdown"
                      autocomplete="off" />
               <button type="button" class="search-clear-btn" id="searchClearBtn" aria-label="Clear search" title="Clear search" style="display: none;">
                 <i class="fa-solid fa-xmark" aria-hidden="true"></i>
@@ -160,13 +166,13 @@
           <div class="building-overview-card">
             <div class="boc-header">
               <span class="boc-title">Main Academic Block (MAB)</span>
-              <span class="boc-badge">Engineering Wing</span>
+              <span class="boc-badge" style="background: #fef3c7; color: #92400e; border: 1px solid #fcd34d;">Demonstration Model</span>
             </div>
-            <p class="boc-desc">3-story accessible academic facility with dual elevators, level-threshold labs, and exterior entrance ramps.</p>
+            <p class="boc-desc">3-story simulated academic facility model for prototype navigation testing. Unverified against real-world campus surveys.</p>
             <div class="boc-quick-stats">
-              <span><i class="fa-solid fa-wheelchair"></i> 2 Ramps</span>
-              <span><i class="fa-solid fa-elevator"></i> 2 Lifts</span>
-              <span><i class="fa-solid fa-restroom"></i> 3 Universal Restrooms</span>
+              <span><i class="fa-solid fa-wheelchair"></i> 2 Ramps (Model)</span>
+              <span><i class="fa-solid fa-elevator"></i> 2 Lifts (Demonstration)</span>
+              <span><i class="fa-solid fa-restroom"></i> 3 Restrooms (Model)</span>
             </div>
           </div>
 
@@ -216,9 +222,9 @@
              ========================================== -->
         <section class="sidebar-panel-view" id="tab-routes" role="tabpanel" aria-labelledby="tab-btn-routes" tabindex="0">
           <div class="route-form-card">
-            <h3 class="filter-heading" style="margin-bottom: 0.75rem;">
+            <h2 class="filter-heading" style="margin-bottom: 0.75rem;">
               <i class="fa-solid fa-route"></i> Step-Free Route Planner
-            </h3>
+            </h2>
 
             <div class="form-group">
               <label for="routeStartSelect" class="form-label">Starting Point</label>
@@ -252,6 +258,7 @@
              TAB 3: CAMPUS DIRECTORY
              ========================================== -->
         <section class="sidebar-panel-view" id="tab-directory" role="tabpanel" aria-labelledby="tab-btn-directory" tabindex="0">
+          <h2 class="sr-only">Campus Directory</h2>
           <div class="directory-filters-bar">
             <div>
               <label for="dirFloorFilter" class="form-label">Floor</label>
@@ -289,7 +296,7 @@
         <section class="sidebar-panel-view" id="tab-community" role="tabpanel" aria-labelledby="tab-btn-community" tabindex="0">
           <div class="community-header-row">
             <div>
-              <h3 class="filter-heading">Community Updates</h3>
+              <h2 class="filter-heading">Community Updates</h2>
               <p style="font-size: 0.75rem; color: var(--text-muted);">Crowdsourced tips and maintenance status</p>
             </div>
             <button type="button" class="btn-primary btn-sm" onclick="window.CampusApp.community.openNewPostModal()">
@@ -299,13 +306,15 @@
 
           <!-- Category Quick Filter for Bulletin -->
           <div style="display: flex; gap: 0.35rem; margin-bottom: 0.85rem; overflow-x: auto; padding-bottom: 4px;">
-            <button class="btn-text-action" onclick="window.CampusApp.community.filterCategory('all')">All</button>
-            <span class="divider">|</span>
-            <button class="btn-text-action" onclick="window.CampusApp.community.filterCategory('path-alert')">Alerts</button>
-            <span class="divider">|</span>
-            <button class="btn-text-action" onclick="window.CampusApp.community.filterCategory('maintenance')">Maintenance</button>
-            <span class="divider">|</span>
-            <button class="btn-text-action" onclick="window.CampusApp.community.filterCategory('facility')">Upgrades</button>
+            <button type="button" class="btn-text-action" onclick="window.CampusApp.community.filterCategory('all')" aria-pressed="true">All</button>
+            <span class="divider" aria-hidden="true">|</span>
+            <button type="button" class="btn-text-action" onclick="window.CampusApp.community.filterCategory('path-alert')" aria-pressed="false">Alerts</button>
+            <span class="divider" aria-hidden="true">|</span>
+            <button type="button" class="btn-text-action" onclick="window.CampusApp.community.filterCategory('maintenance')" aria-pressed="false">Maintenance</button>
+            <span class="divider" aria-hidden="true">|</span>
+            <button type="button" class="btn-text-action" onclick="window.CampusApp.community.filterCategory('facility')" aria-pressed="false">Upgrades</button>
+            <span class="divider" aria-hidden="true">|</span>
+            <button type="button" class="btn-text-action" onclick="window.CampusApp.community.filterCategory('resource')" aria-pressed="false">Resources</button>
           </div>
 
           <div id="communityFeedContainer">
@@ -319,7 +328,7 @@
         <section class="sidebar-panel-view" id="tab-reports" role="tabpanel" aria-labelledby="tab-btn-reports" tabindex="0">
           <div class="reports-header-row">
             <div>
-              <h3 class="filter-heading">Accessibility Barriers</h3>
+              <h2 class="filter-heading">Accessibility Barriers</h2>
               <p style="font-size: 0.75rem; color: var(--text-muted);">Report blocked paths, broken lifts, or map errors</p>
             </div>
             <button type="button" class="btn-primary btn-sm" onclick="window.CampusApp.reports.openModal()">
@@ -336,7 +345,7 @@
     </aside>
 
     <!-- Right Full Map Area: Campus Navigation -->
-    <main class="map-container-wrapper" id="campusNavigation" role="main" aria-label="Campus Interactive Map View">
+    <main class="map-container-wrapper" id="campusNavigation" aria-label="Campus Interactive Map View">
       <!-- Leaflet Map Canvas with Accessible Alternatives -->
       <div id="map" role="region" aria-label="Interactive Campus Map" tabindex="-1">
         <div class="sr-only">
@@ -395,7 +404,7 @@
             <span>Emergency Exits</span>
           </div>
           <div class="legend-item">
-            <span class="legend-dot" style="background: #10b981; border: 1px dashed #059669;"></span>
+            <span class="legend-dot" style="background: var(--route-accessible); border: 1px dashed #059669;"></span>
             <span>Step-free Paths</span>
           </div>
         </div>
@@ -406,19 +415,24 @@
   <!-- ==========================================================================
        MODAL 1: REPORT ACCESSIBILITY BARRIER
        ========================================================================== -->
-  <div class="modal-backdrop" id="reportIssueModal" role="dialog" aria-modal="true" aria-labelledby="reportModalTitle" aria-hidden="true">
-    <div class="modal-dialog">
+  <div class="modal-backdrop" id="reportIssueModal" aria-hidden="true">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="reportModalTitle">
       <div class="modal-header">
-        <h3 class="modal-title" id="reportModalTitle">
+        <h2 class="modal-title" id="reportModalTitle">
           <i class="fa-solid fa-flag" style="color: var(--danger)"></i> Report Accessibility Barrier
-        </h3>
+        </h2>
         <button type="button" class="btn-icon-close" onclick="window.CampusApp.reports.closeModal()" aria-label="Close dialog">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
 
-      <form id="reportIssueForm">
+      <form id="reportIssueForm" novalidate>
         <div class="modal-body">
+          <div class="prototype-notice-box" role="note">
+            <i class="fa-solid fa-circle-info"></i>
+            <span><strong>Prototype Notice:</strong> Submissions are saved locally in browser storage for demonstration. Reports are not sent to campus authorities or emergency services.</span>
+          </div>
+
           <div class="form-group">
             <label for="reportTypeSelect" class="form-label">Issue Category *</label>
             <select id="reportTypeSelect" name="issueType" class="select-custom" required>
@@ -428,7 +442,8 @@
               <option value="Missing Handrail / Grab Bar">Missing or Loose Handrail / Grab Bar</option>
               <option value="Slippery / Damaged Floor">Slippery, Broken or Uneven Flooring</option>
               <option value="Incorrect Room Info on Map">Incorrect Room Info / Suggest Correction</option>
-              <option value="Broken Audio / Braille Feature">Broken Audio Chime / Braille Signage Missing</option>
+              <option value="Broken Audio Chime / Voice Announcement">Broken Audio Floor Chime / Voice Announcement</option>
+              <option value="Missing or Damaged Braille Signage">Missing or Damaged Braille Signage</option>
               <option value="Other Accessibility Barrier">Other Accessibility Barrier</option>
             </select>
           </div>
@@ -447,6 +462,7 @@
                 <option value="L0">Ground Floor (L0)</option>
                 <option value="L1">First Floor (L1)</option>
                 <option value="L2">Second Floor (L2)</option>
+                <option value="outdoor">Outdoor / Ground Level (N/A)</option>
               </select>
             </div>
           </div>
@@ -474,7 +490,7 @@
           <div class="form-row-2col">
             <div class="form-group">
               <label for="reportReporterName" class="form-label">Your Name (Optional)</label>
-              <input type="text" id="reportReporterName" name="reporterName" class="input-custom" placeholder="e.g. Sneha (or leave blank)" />
+              <input type="text" id="reportReporterName" name="reporterName" class="input-custom" placeholder="e.g. Sneha (or leave blank)" autocomplete="name" />
               <small class="form-help-text" style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-top: 0.25rem;">Optional. Displayed publicly only if provided; leave blank for anonymous report.</small>
             </div>
             <div class="form-group">
@@ -500,23 +516,28 @@
   <!-- ==========================================================================
        MODAL 2: NEW COMMUNITY BULLETIN POST
        ========================================================================== -->
-  <div class="modal-backdrop" id="newCommunityPostModal" role="dialog" aria-modal="true" aria-labelledby="postModalTitle" aria-hidden="true">
-    <div class="modal-dialog">
+  <div class="modal-backdrop" id="newCommunityPostModal" aria-hidden="true">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="postModalTitle">
       <div class="modal-header">
-        <h3 class="modal-title" id="postModalTitle">
+        <h2 class="modal-title" id="postModalTitle">
           <i class="fa-solid fa-bullhorn" style="color: var(--primary)"></i> Share Accessibility Tip
-        </h3>
+        </h2>
         <button type="button" class="btn-icon-close" onclick="window.CampusApp.community.closeNewPostModal()" aria-label="Close dialog">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
 
-      <form id="newCommunityPostForm">
+      <form id="newCommunityPostForm" novalidate>
         <div class="modal-body">
+          <div class="prototype-notice-box" role="note">
+            <i class="fa-solid fa-circle-info"></i>
+            <span><strong>Prototype Notice:</strong> Community posts are stored locally in browser storage for demonstration and are not official campus announcements.</span>
+          </div>
+
           <div class="form-row-2col">
             <div class="form-group">
               <label for="postAuthor" class="form-label">Your Name / Handle (Optional)</label>
-              <input type="text" id="postAuthor" name="postAuthor" class="input-custom" placeholder="e.g. Sneha (or leave blank)" />
+              <input type="text" id="postAuthor" name="postAuthor" class="input-custom" placeholder="e.g. Sneha (or leave blank)" autocomplete="name" />
               <small class="form-help-text" style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-top: 0.25rem;">Optional. Displayed on public bulletin or posted as "Campus Member".</small>
             </div>
             <div class="form-group">
