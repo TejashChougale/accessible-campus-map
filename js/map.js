@@ -1,7 +1,7 @@
 /**
  * ACCESSIBLE CAMPUS MAP - MAP INITIALIZATION & RENDERING ENGINE
  *
- * Uses Leaflet.js with OpenStreetMap / CartoDB tiles.
+ * Uses Leaflet.js with MapTiler Cloud raster tiles and architectural schematic grid fallback.
  * Handles custom SVG accessibility markers, floor plan overlays,
  * layer switching, and interactive route rendering.
  */
@@ -22,6 +22,9 @@ class CampusMapController {
     this.isHighContrast = false;
     this.selectedLocation = null;
     this.resizeObserver = null;
+    this.storageKey = "accessible_campus_maptiler_key";
+    this.tileErrorDetected = false;
+    this.basemapAttribution = '&copy; <a href="https://www.maptiler.com/copyright/" target="_blank" rel="noopener noreferrer">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors';
 
     // Callbacks to notify UI
     this.onLocationSelected = null;
@@ -46,9 +49,9 @@ class CampusMapController {
           <div style="font-size: 3rem; color: #2563eb; margin-bottom: 1rem;">
             <i class="fa-solid fa-map-location-dot"></i>
           </div>
-          <h2 style="font-size: 1.3rem; font-weight: 700; color: #0f172a; margin-bottom: 0.5rem;">Interactive Map (Requires Internet for Tiles)</h2>
+          <h2 style="font-size: 1.3rem; font-weight: 700; color: #0f172a; margin-bottom: 0.5rem;">Interactive Map (Requires Leaflet JS Library)</h2>
           <p style="max-width: 480px; font-size: 0.9rem; line-height: 1.5; margin-bottom: 1.5rem; color: #64748b;">
-            Connect to the internet to load OpenStreetMap satellite and street tiles via Leaflet CDN. All sidebar features, room search, directory, directions, issue reporting, and community updates are active.
+            Connect to the internet to load the Leaflet map engine from CDN. All sidebar features, room search, directory, directions, issue reporting, and community updates are active.
           </p>
           <div style="display: flex; gap: 0.5rem;">
             <button class="btn-primary" style="width: auto;" onclick="location.reload()">
@@ -75,8 +78,13 @@ class CampusMapController {
     // Add Accessible Zoom controls at bottom-right
     L.control.zoom({ position: "bottomright" }).addTo(this.map);
 
-    // Add Base Tile Layer (Carto Voyager - clean, high legibility, free & open)
-    this.setTileLayer("voyager");
+    // Configure Leaflet attribution prefix
+    if (this.map.attributionControl) {
+      this.map.attributionControl.setPrefix('<a href="https://leafletjs.com" title="A JavaScript library for interactive maps">Leaflet</a>');
+    }
+
+    // Add Base Tile Layer (MapTiler raster tiles or architectural grid fallback)
+    this.setTileLayer();
 
     // Layer Groups for performance (batch addition/clearing)
     this.markerLayerGroup = L.layerGroup().addTo(this.map);
@@ -126,33 +134,136 @@ class CampusMapController {
   }
 
   /**
-   * Sets the map tile layer style (standard, high contrast, or satellite-like)
+   * Retrieves the MapTiler API key from window override or browser localStorage
    */
-  setTileLayer(type = "voyager") {
+  getApiKey() {
+    if (typeof window !== "undefined" && window.CAMPUS_MAPTILER_KEY) {
+      return String(window.CAMPUS_MAPTILER_KEY).trim();
+    }
+    try {
+      if (typeof localStorage !== "undefined") {
+        return (localStorage.getItem(this.storageKey) || "").trim();
+      }
+    } catch (e) {
+      console.warn("Could not read localStorage for MapTiler key:", e);
+    }
+    return "";
+  }
+
+  /**
+   * Updates the MapTiler API key in localStorage and refreshes the tile layer
+   */
+  setApiKey(key) {
+    const trimmed = (key || "").trim();
+    try {
+      if (typeof localStorage !== "undefined") {
+        if (trimmed) {
+          localStorage.setItem(this.storageKey, trimmed);
+        } else {
+          localStorage.removeItem(this.storageKey);
+        }
+      }
+    } catch (e) {
+      console.warn("Could not save MapTiler key to localStorage:", e);
+    }
+    this.tileErrorDetected = false;
+    this.setTileLayer();
+  }
+
+  /**
+   * Sets the map tile layer style using MapTiler Cloud or architectural grid fallback
+   */
+  setTileLayer(style = null) {
     if (typeof L === "undefined" || !this.map) return;
 
     if (this.activeTileLayer) {
       this.map.removeLayer(this.activeTileLayer);
+      this.activeTileLayer = null;
     }
 
-    let tileUrl = "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
-    let attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
-
-    if (type === "dark") {
-      tileUrl = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
-    } else if (type === "osm") {
-      tileUrl = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
-      attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+    // Ensure external basemap attribution is cleared when tile layer is not active
+    if (this.map.attributionControl) {
+      this.map.attributionControl.removeAttribution(this.basemapAttribution);
     }
 
-    this.activeTileLayer = L.tileLayer(tileUrl, {
-      attribution: attribution,
+    const container = this.map.getContainer();
+    const apiKey = this.getApiKey();
+
+    if (!apiKey) {
+      // Key not configured: display clean architectural CAD blueprint grid
+      if (container) {
+        container.classList.add("map-fallback-grid");
+      }
+      this.showFallbackBanner(
+        "Architectural Schematic View (Basemap key not configured). All campus markers, buildings, and routes are fully active.",
+        false
+      );
+      return;
+    }
+
+    // Key is present: attempt to load MapTiler raster tiles
+    if (container) {
+      container.classList.remove("map-fallback-grid");
+    }
+    this.hideFallbackBanner();
+
+    const tileStyle = style || (this.isHighContrast ? "dataviz-dark" : "streets-v2");
+    const tileUrl = `https://api.maptiler.com/maps/${tileStyle}/{z}/{x}/{y}.png?key=${encodeURIComponent(apiKey)}`;
+
+    const layer = L.tileLayer(tileUrl, {
+      attribution: this.basemapAttribution,
+      tileSize: 512,
+      zoomOffset: -1,
+      minZoom: 1,
       maxZoom: 20,
-      subdomains: "abcd",
-      keepBuffer: 3,
-      updateWhenIdle: true,
-      updateWhenZooming: false
-    }).addTo(this.map);
+      maxNativeZoom: 19,
+      crossOrigin: true
+    });
+
+    let errorCount = 0;
+    layer.on("tileerror", () => {
+      errorCount++;
+      if (errorCount >= 2 && !this.tileErrorDetected) {
+        this.tileErrorDetected = true;
+        console.warn("MapTiler tile loading failed (invalid key or origin restriction). Falling back to architectural grid.");
+        if (this.activeTileLayer && this.map && this.map.hasLayer(this.activeTileLayer)) {
+          this.map.removeLayer(this.activeTileLayer);
+          this.activeTileLayer = null;
+        }
+        if (this.map.attributionControl) {
+          this.map.attributionControl.removeAttribution(this.basemapAttribution);
+        }
+        if (container) {
+          container.classList.add("map-fallback-grid");
+        }
+        this.showFallbackBanner(
+          "MapTiler basemap could not load (invalid API key or domain restriction). Showing schematic view.",
+          true
+        );
+      }
+    });
+
+    layer.addTo(this.map);
+    this.activeTileLayer = layer;
+  }
+
+  showFallbackBanner(message, isWarning = false) {
+    const banner = document.getElementById("mapFallbackBanner");
+    const textEl = document.getElementById("mapFallbackText");
+    if (!banner) return;
+
+    if (textEl && message) {
+      textEl.textContent = message;
+    }
+    banner.classList.remove("hidden");
+    banner.classList.toggle("banner-warning", isWarning);
+  }
+
+  hideFallbackBanner() {
+    const banner = document.getElementById("mapFallbackBanner");
+    if (banner) {
+      banner.classList.add("hidden");
+    }
   }
 
   /**
@@ -657,8 +768,12 @@ class CampusMapController {
    */
   toggleHighContrast(enabled) {
     this.isHighContrast = enabled;
-    if (typeof L !== "undefined" && this.map) {
-      this.setTileLayer(enabled ? "dark" : "voyager");
+    if (typeof L !== "undefined" && this.map && this.map.getContainer()) {
+      this.map.getContainer().classList.toggle("map-high-contrast", enabled);
+    }
+    const apiKey = this.getApiKey();
+    if (apiKey && !this.tileErrorDetected) {
+      this.setTileLayer(enabled ? "dataviz-dark" : "streets-v2");
     }
   }
 }

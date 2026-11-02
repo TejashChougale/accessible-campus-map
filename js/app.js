@@ -1325,6 +1325,117 @@ class CampusApp {
     const dirCat = document.getElementById("dirCatFilter");
     if (dirFloor) dirFloor.addEventListener("change", () => this.renderDirectoryList());
     if (dirCat) dirCat.addEventListener("change", () => this.renderDirectoryList());
+
+    // Map Settings Form
+    const settingsForm = document.getElementById("mapSettingsForm");
+    if (settingsForm) {
+      settingsForm.addEventListener("submit", (e) => this.saveMapApiKey(e));
+    }
+  }
+
+  /**
+   * Opens the accessible Map Settings & MapTiler Key dialog
+   */
+  openMapSettingsModal() {
+    this._lastFocusedElement = document.activeElement;
+    const modal = document.getElementById("mapSettingsModal");
+    const input = document.getElementById("mapTilerKeyInput");
+    if (!modal) return;
+
+    if (input) {
+      input.value = this.map ? this.map.getApiKey() : "";
+    }
+
+    modal.classList.add("open");
+    modal.setAttribute("aria-hidden", "false");
+
+    // Modal focus trap & Escape key handler
+    this._mapSettingsKeyDownHandler = (e) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        this.closeMapSettingsModal();
+        return;
+      }
+
+      if (e.key === "Tab") {
+        const focusables = Array.from(modal.querySelectorAll(
+          'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        ));
+        if (focusables.length === 0) return;
+
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    modal.addEventListener("keydown", this._mapSettingsKeyDownHandler);
+
+    if (input) {
+      input.focus();
+    }
+  }
+
+  /**
+   * Closes the Map Settings dialog and restores focus
+   */
+  closeMapSettingsModal() {
+    const modal = document.getElementById("mapSettingsModal");
+    if (!modal) return;
+
+    if (this._mapSettingsKeyDownHandler) {
+      modal.removeEventListener("keydown", this._mapSettingsKeyDownHandler);
+      this._mapSettingsKeyDownHandler = null;
+    }
+
+    modal.classList.remove("open");
+    modal.setAttribute("aria-hidden", "true");
+
+    if (this._lastFocusedElement && typeof this._lastFocusedElement.focus === "function") {
+      this._lastFocusedElement.focus();
+    }
+  }
+
+  /**
+   * Saves the MapTiler API key from the modal form
+   */
+  saveMapApiKey(e) {
+    if (e && typeof e.preventDefault === "function") {
+      e.preventDefault();
+    }
+    const input = document.getElementById("mapTilerKeyInput");
+    const key = input ? input.value.trim() : "";
+
+    if (this.map) {
+      this.map.setApiKey(key);
+    }
+
+    this.closeMapSettingsModal();
+
+    if (key) {
+      this.showToast("MapTiler key saved. Applying basemap tiles...");
+    } else {
+      this.showToast("MapTiler key removed. Reverting to schematic architectural view.");
+    }
+  }
+
+  /**
+   * Clears the MapTiler API key and reverts to schematic grid
+   */
+  clearMapApiKey() {
+    const input = document.getElementById("mapTilerKeyInput");
+    if (input) input.value = "";
+    if (this.map) {
+      this.map.setApiKey("");
+    }
+    this.closeMapSettingsModal();
+    this.showToast("MapTiler key removed. Reverting to schematic architectural view.");
   }
 
   escapeHtml(str) {

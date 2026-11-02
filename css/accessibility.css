@@ -340,6 +340,83 @@ body.high-contrast-mode .emergency-disclaimer-note i {
 }
 
 /* ==========================================================================
+   High Contrast Map & Basemap Tiles
+   ========================================================================== */
+/* MapTiler provides a native dark theme (dataviz-dark) when an API key is configured.
+   Native dark raster tiles preserve high-contrast legibility without CSS filter inversion. */
+body.high-contrast-mode .leaflet-tile-pane,
+.map-high-contrast .leaflet-tile-pane {
+  filter: none;
+}
+
+/* Architectural Grid High-Contrast Blueprint */
+body.high-contrast-mode #map.map-fallback-grid {
+  background-color: #050811 !important;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.18) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.18) 1px, transparent 1px) !important;
+  background-size: 24px 24px !important;
+}
+
+body.high-contrast-mode .map-fallback-banner {
+  background: #000000 !important;
+  border: 2px solid #ffffff !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+}
+
+body.high-contrast-mode .map-fallback-banner.banner-warning {
+  border-color: #ffff00 !important;
+  background: #1a1a00 !important;
+  color: #ffff00 !important;
+}
+
+body.high-contrast-mode .map-fallback-content i {
+  color: #ffff00 !important;
+}
+
+body.high-contrast-mode .btn-fallback-action {
+  background: #000000 !important;
+  color: #ffff00 !important;
+  border: 2px solid #ffffff !important;
+}
+
+body.high-contrast-mode .btn-fallback-action:hover,
+body.high-contrast-mode .btn-fallback-action:focus-visible {
+  background: #ffff00 !important;
+  color: #000000 !important;
+  outline: 3px solid #ffff00 !important;
+}
+
+body.high-contrast-mode .leaflet-control-attribution,
+.map-high-contrast .leaflet-control-attribution {
+  background-color: rgba(0, 0, 0, 0.85) !important;
+  color: #ffffff !important;
+  border: 1px solid #ffffff !important;
+}
+
+body.high-contrast-mode .leaflet-control-attribution a,
+.map-high-contrast .leaflet-control-attribution a {
+  color: #ffff00 !important;
+  text-decoration: underline !important;
+}
+
+body.high-contrast-mode .leaflet-control-zoom a,
+.map-high-contrast .leaflet-control-zoom a {
+  background-color: #000000 !important;
+  color: #ffff00 !important;
+  border-color: #ffffff !important;
+}
+
+body.high-contrast-mode .leaflet-control-zoom a:hover,
+body.high-contrast-mode .leaflet-control-zoom a:focus-visible,
+.map-high-contrast .leaflet-control-zoom a:hover,
+.map-high-contrast .leaflet-control-zoom a:focus-visible {
+  background-color: #ffff00 !important;
+  color: #000000 !important;
+}
+
+/* ==========================================================================
    Reduced Motion Preferences
    ========================================================================== */
 @media (prefers-reduced-motion: reduce) {

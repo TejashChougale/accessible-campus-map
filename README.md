@@ -1,7 +1,7 @@
 # ♿ Accessible Campus Map
 
 > **An interactive, step-free navigation and accessibility tool designed for college students, staff, and campus visitors.**
-> Built with vanilla **HTML5**, **CSS3**, and **JavaScript**, powered by **Leaflet.js** and **CARTO Voyager** (OpenStreetMap contributors).
+> Built with vanilla **HTML5**, **CSS3**, and **JavaScript**, powered by **Leaflet.js**, **MapTiler Cloud**, and **OpenStreetMap** contributors (with offline architectural grid fallback).
 
 ---
 
@@ -41,7 +41,52 @@ This project is an **active educational demonstration prototype** developed to t
 - **CSS3:** Custom properties (CSS variables) for modular theming, WCAG AA contrast compliance (>=4.5:1 against light surfaces), Flexbox and CSS Grid responsive layouts, GPU-accelerated compositing (`transform`, `opacity`), dynamic viewport heights (`100dvh`), and reduced-motion preferences (`prefers-reduced-motion`).
 - **JavaScript (Vanilla ES6+):** Modular object-oriented architecture without external frameworks or bundlers. Features debounced input processing, Euclidean distance and floor-penalty heuristics, and `localStorage` state management.
 - **Leaflet.js (v1.9.4):** Lightweight, mobile-friendly interactive mapping engine handling custom SVG category markers, floor-filtered layer groups (`L.layerGroup`), building footprint polygons, and route polylines.
-- **CARTO Voyager / OpenStreetMap:** High-clarity raster tiles providing geographic context surrounding campus buildings.
+- **MapTiler Cloud & Architectural Grid Fallback:** Vector-rendered raster tiles from MapTiler Cloud with seamless fallback to an architectural CAD blueprint grid when operating keyless or offline.
+- **OpenStreetMap Data:** High-quality geographic map data contributed by OpenStreetMap contributors under the Open Database License.
+
+---
+
+## 🗺️ MapTiler Cloud Basemap Setup & API Key Security
+
+The application uses **MapTiler Cloud** as its basemap raster provider, while providing a clean **architectural CAD blueprint grid** when no API key is configured.
+
+### Free Tier Limits
+- MapTiler Cloud offers a **free developer tier** granting **100,000 map tile requests per month** with no credit card required.
+
+### 1. Generating a Free API Key
+1. Visit [cloud.maptiler.com](https://cloud.maptiler.com/) and register for a free account.
+2. Go to **Account &rarr; Keys** in the MapTiler Cloud dashboard.
+3. Click your **Default Key** (or create a new public key for this project).
+
+### 2. Domain Restriction for GitHub Pages & Localhost
+To prevent unauthorized usage of your monthly quota, restrict your key to your intended hosting origins:
+1. In the key configuration settings, find **Allowed HTTP origins (domain restriction)**.
+2. Add your production deployment domain:
+   ```text
+   https://<your-username>.github.io/*
+   ```
+3. For local development and testing, also add:
+   ```text
+   http://localhost:*
+   http://127.0.0.1:*
+   ```
+4. Click **Save Changes**.
+
+### 3. Entering Your Key in the Application
+1. Open the Accessible Campus Map in your browser.
+2. Click the **Basemap Settings** gear icon in the top-right floating map controls (or click **Basemap Settings** in the schematic fallback banner).
+3. Paste your public API key into the input field and click **Save & Apply**.
+4. The key is securely stored in your browser's local storage (`localStorage`) under the key `accessible_campus_maptiler_key` and is never sent to any server other than MapTiler Cloud.
+5. In High-Contrast Mode, the map automatically loads MapTiler's dedicated high-contrast `dataviz-dark` style.
+
+### 4. Keyless Architectural CAD Grid View
+- If no key is entered, or if key loading fails, the map smoothly operates in **Architectural Schematic View**.
+- An architectural blueprint grid background is displayed, and all campus buildings, entrance ramps, elevators, rooms, directory searches, and step-free routes remain **100% active and functional**.
+- No broken tile icons, missing image borders, or infinite network retries will ever appear.
+
+### 5. Required Attribution
+- When tiles are active, Leaflet renders the required legal attribution:
+  `© MapTiler © OpenStreetMap contributors` per MapTiler Cloud and OpenStreetMap licensing policies.
 
 ---
 
@@ -143,7 +188,7 @@ accessible-campus-map/
 2. **Prototype Facilities (Lifts & Ramps):** Passenger elevators (`L-01`, `L-02`) and entrance ramps (`R-01`, `R-02`) are **simulated prototype model facilities** created to develop and test multi-floor route calculations. They are not confirmed real-world facilities in the Bagalkot campus building.
 3. **Route Distance & Measurement Assumptions:** Distances reported by the route planner (e.g. 22m entrance approach, 114m total path) are mathematical model estimates based on the simulated coordinate grid, not on-site physical surveyor measurements.
 4. **Emergency Route Certification Disclaimer:** Paths and emergency exit locations are displayed strictly for general orientation and interface demonstration. **They are not certified for real-world emergency evacuation** (e.g. fire, earthquake). Users must always follow official campus emergency signage, alarms, and safety officer directions.
-5. **Internet Requirement for Map Tiles:** Core interface controls, directory browsing, room search, path calculation, barrier reporting, and community updates function offline. However, interactive CARTO Voyager base tiles require an internet connection to download map imagery.
+5. **Basemap & Offline Functionality:** Core interface controls, directory browsing, room search, path calculation, barrier reporting, and community updates function 100% offline using bundled client assets and an architectural CAD blueprint grid. When an optional MapTiler API key is configured, raster basemap tiles are fetched dynamically from MapTiler Cloud over an active internet connection. Users can remove or update the key at any time from the in-app Basemap Settings dialog.
 6. **Client-Side Prototype Storage:** User-submitted barrier reports and community updates are persisted in the browser's `localStorage` for testing purposes and are not linked to a live university backend or ticketing server.
 
 ---

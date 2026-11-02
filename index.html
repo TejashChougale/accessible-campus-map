@@ -354,6 +354,17 @@
         </div>
       </div>
 
+      <!-- Basemap Status & Fallback Banner -->
+      <div class="map-fallback-banner" id="mapFallbackBanner" role="status" aria-live="polite">
+        <div class="map-fallback-content">
+          <i class="fa-solid fa-shapes" aria-hidden="true"></i>
+          <span class="map-fallback-text" id="mapFallbackText">Architectural Schematic View (Basemap key not configured). All campus markers, buildings, and routes are fully active.</span>
+          <button type="button" class="btn-fallback-action" onclick="window.CampusApp.openMapSettingsModal()">
+            <i class="fa-solid fa-gear" aria-hidden="true"></i> Basemap Settings
+          </button>
+        </div>
+      </div>
+
       <!-- Floating Map Controls -->
       <div class="map-floating-controls" role="toolbar" aria-label="Map Visual Controls">
         <button type="button" class="map-control-btn" onclick="window.CampusApp.map.resetView()" title="Recenter Campus View" aria-label="Recenter campus view">
@@ -361,6 +372,9 @@
         </button>
         <button type="button" class="map-control-btn" onclick="window.CampusApp.map.focusBuilding('block-a')" title="Focus Main Academic Block" aria-label="Focus Main Academic Block">
           <i class="fa-solid fa-building" aria-hidden="true"></i>
+        </button>
+        <button type="button" class="map-control-btn" onclick="window.CampusApp.openMapSettingsModal()" title="Basemap Settings & API Key" aria-label="Basemap Settings and API Key Configuration">
+          <i class="fa-solid fa-gear" aria-hidden="true"></i>
         </button>
       </div>
 
@@ -575,6 +589,62 @@
         <div class="modal-footer">
           <button type="button" class="btn-secondary" onclick="window.CampusApp.community.closeNewPostModal()">Cancel</button>
           <button type="submit" class="btn-primary" style="width: auto;">Publish Update</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       MODAL 3: MAP BASEMAP & MAPTILER SETTINGS
+       ========================================================================== -->
+  <div class="modal-backdrop" id="mapSettingsModal" aria-hidden="true">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="mapSettingsModalTitle">
+      <div class="modal-header">
+        <h2 class="modal-title" id="mapSettingsModalTitle">
+          <i class="fa-solid fa-map-location-dot" style="color: var(--primary)" aria-hidden="true"></i> Basemap Settings
+        </h2>
+        <button type="button" class="btn-icon-close" onclick="window.CampusApp.closeMapSettingsModal()" aria-label="Close dialog">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form id="mapSettingsForm" novalidate>
+        <div class="modal-body">
+          <div class="prototype-notice-box" role="note">
+            <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+            <span><strong>Educational Prototype:</strong> All campus rooms, building outlines, step-free routes, and accessibility features function offline without an API key using the schematic grid.</span>
+          </div>
+
+          <div class="form-group">
+            <label for="mapTilerKeyInput" class="form-label">MapTiler Public API Key</label>
+            <input type="text" id="mapTilerKeyInput" name="mapTilerKey" class="input-custom" placeholder="Paste your MapTiler public key here..." autocomplete="off" spellcheck="false" />
+            <small class="form-help-text" style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-top: 0.35rem;">
+              Your key is saved locally in your browser storage (<code>localStorage</code>) and is never transmitted to any third-party server other than MapTiler Cloud.
+            </small>
+          </div>
+
+          <div class="settings-guide-box" style="background: var(--surface-subtle); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.75rem 0.85rem; font-size: 0.75rem; line-height: 1.5; color: var(--text-muted);">
+            <strong style="color: var(--text-main); display: block; margin-bottom: 0.25rem;">
+              <i class="fa-solid fa-key" style="color: var(--primary)" aria-hidden="true"></i> How to get a free MapTiler key:
+            </strong>
+            <ol style="margin: 0; padding-left: 1.25rem;">
+              <li>Create a free account at <a href="https://cloud.maptiler.com/account/keys/" target="_blank" rel="noopener noreferrer" style="color: var(--primary); text-decoration: underline;">cloud.maptiler.com</a> (100,000 free requests/month).</li>
+              <li>Under <strong>Account &rarr; Keys</strong>, copy your Default Public Key.</li>
+              <li>For production on GitHub Pages, restrict the key in MapTiler Cloud to allowed HTTP origins (e.g. <code>https://&lt;username&gt;.github.io/*</code> or <code>http://localhost:*</code>).</li>
+            </ol>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+          <button type="button" class="btn-secondary" id="btnClearMapKey" onclick="window.CampusApp.clearMapApiKey()" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.4);">
+            <i class="fa-solid fa-trash-can" aria-hidden="true"></i> Remove Key
+          </button>
+          <div style="display: flex; gap: 0.5rem;">
+            <button type="button" class="btn-secondary" onclick="window.CampusApp.closeMapSettingsModal()">Cancel</button>
+            <button type="submit" class="btn-primary" style="width: auto;">
+              <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> Save &amp; Apply
+            </button>
+          </div>
         </div>
       </form>
     </div>
