@@ -201,3 +201,18 @@ accessible-campus-map/
 - **Indoor Positioning Support:** Exploring Bluetooth Low Energy (BLE) beacons, Wi-Fi RTT, or QR code checkpoint scans for real-time indoor blue-dot navigation.
 - **Multi-Building Expansion:** Extending step-free routing across multiple academic, library, residential, and athletic complexes across the full university campus.
 - **Localization:** Providing multi-language interface translations and regional language voice guidance.
+
+
+## Project Screenshots
+
+### 1. Campus Map Overview
+![Campus Map Overview](Day8_Project_Screenshots/Screenshot%202026-11-02%20113122.png)
+
+### 2. Campus Search
+![Campus Search](Day8_Project_Screenshots/Screenshot%202026-11-02%20113148.png)
+
+### 3. Route Planner
+![Route Planner](Day8_Project_Screenshots/Screenshot%202026-11-02%20113215.png)
+
+### 4. High Contrast Mode
+![High Contrast Mode](Day8_Project_Screenshots/Screenshot%202026-11-02%20113248.png)
